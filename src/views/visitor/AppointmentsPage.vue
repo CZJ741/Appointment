@@ -519,7 +519,10 @@ export default {
     }
 
     // 监听点击模态框外部关闭
-    onMounted(() => {
+    onMounted(async () => {
+      // 从后端获取最新的预约数据
+      await store.dispatch('initializeData')
+      
       const handleClickOutside = (event) => {
         if (selectedAppointment.value && 
             event.target.classList.contains('fixed') && 

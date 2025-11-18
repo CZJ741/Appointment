@@ -286,8 +286,8 @@ export default {
       loading.value = true
       
       try {
-        // 使用身份验证工具验证登录
-        const result = validateAdminLogin(form.value.username, form.value.password, form.value.captcha)
+        // 使用身份验证工具验证登录（注意使用await）
+        const result = await validateAdminLogin(form.value.username, form.value.password, form.value.captcha)
         
         if (result.success) {
           // 更新Vuex状态
@@ -300,13 +300,14 @@ export default {
           // 登录成功，跳转到管理面板
           router.push('/admin/dashboard')
         } else {
-          notification.error(result.message)
+          // 确保title参数是字符串
+          notification.error('登录失败', result.message || '用户名或密码错误')
           // 刷新验证码
           refreshCaptcha()
           form.value.captcha = ''
         }
       } catch (error) {
-        notification.error('登录失败，请稍后重试')
+        notification.error('登录异常', '登录失败，请稍后重试')
         console.error('Login error:', error)
       } finally {
         loading.value = false

@@ -24,6 +24,7 @@
                   to="/booking"
                   class="nav-link"
                   active-class="nav-link-active"
+                  @click="handleProtectedRoute"
                 >
                   预约探访
                 </router-link>
@@ -31,6 +32,7 @@
                   to="/appointments"
                   class="nav-link"
                   active-class="nav-link-active"
+                  @click="handleProtectedRoute"
                 >
                   我的预约
                 </router-link>
@@ -47,11 +49,28 @@
                 </svg>
               </button>
             </div>
+            <!-- 用户登录/退出 -->
+            <div v-if="!isAdminRoute" class="flex items-center ml-4">
+              <button
+                v-if="isUserLoggedIn"
+                @click="userLogout"
+                class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200"
+              >
+                退出登录
+              </button>
+              <router-link
+                v-else
+                to="/user/login"
+                class="px-3 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
+              >
+                探访人登录
+              </router-link>
+            </div>
             <!-- 管理员入口 -->
             <router-link 
               v-if="!isAdminRoute" 
               to="/admin/login"
-              class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
+              class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-200"
             >
               管理员登录
             </router-link>
@@ -61,37 +80,52 @@
 
       <!-- 移动端菜单 -->
       <div v-if="mobileMenuOpen" class="md:hidden">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <router-link
-            to="/"
-            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            @click="mobileMenuOpen = false"
-          >
-            首页
-          </router-link>
-          <router-link
-            to="/booking"
-            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            @click="mobileMenuOpen = false"
-          >
-            预约探访
-          </router-link>
-          <router-link
-            to="/appointments"
-            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            @click="mobileMenuOpen = false"
-          >
-            我的预约
-          </router-link>
-          <router-link
-            to="/admin/login"
-            class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
-            @click="mobileMenuOpen = false"
-          >
-            管理员登录
-          </router-link>
+          <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <router-link
+              to="/"
+              class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              @click="mobileMenuOpen = false"
+            >
+              首页
+            </router-link>
+            <router-link
+              to="/booking"
+              class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              @click="() => { handleProtectedRoute(); mobileMenuOpen = false; }"
+            >
+              预约探访
+            </router-link>
+            <router-link
+              to="/appointments"
+              class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              @click="() => { handleProtectedRoute(); mobileMenuOpen = false; }"
+            >
+              我的预约
+            </router-link>
+            <button
+              v-if="isUserLoggedIn"
+              @click="userLogout"
+              class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-200"
+            >
+              退出登录
+            </button>
+            <router-link
+              v-else
+              to="/user/login"
+              class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
+              @click="mobileMenuOpen = false"
+            >
+              探访人登录
+            </router-link>
+            <router-link
+              to="/admin/login"
+              class="block px-3 py-2 rounded-md text-base font-medium text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-200"
+              @click="mobileMenuOpen = false"
+            >
+              管理员登录
+            </router-link>
+          </div>
         </div>
-      </div>
     </nav>
 
     <!-- 管理员侧边栏 -->
@@ -181,11 +215,31 @@ export default {
       return router.currentRoute.value.path.startsWith('/admin')
     })
 
+    // 判断用户是否登录
+    const isUserLoggedIn = computed(() => {
+      return store.state.user && store.state.user.isLoggedIn
+    })
+
     // 管理员登出
     const logout = () => {
       store.dispatch('adminLogout')
       router.push('/admin/login')
       notification.success('退出成功', '您已成功退出管理员系统')
+    }
+
+    // 用户登出
+    const userLogout = () => {
+      store.dispatch('userLogout')
+      notification.success('退出成功', '您已成功退出系统')
+    }
+
+    // 处理受保护路由访问
+    const handleProtectedRoute = (event) => {
+      if (!isUserLoggedIn.value) {
+        event?.preventDefault()
+        notification.warning('请先登录', '访问提示')
+        router.push('/user/login')
+      }
     }
 
     // 初始化数据
@@ -242,7 +296,10 @@ export default {
       currentYear,
       isAdminLoginPage,
       isAdminRoute,
-      logout
+      isUserLoggedIn,
+      logout,
+      userLogout,
+      handleProtectedRoute
     }
   }
 }

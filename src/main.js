@@ -9,7 +9,7 @@ const app = createApp(App)
 app.use(router)
 app.use(store)
 
-// 应用现在会保留localStorage中的预约数据，确保刷新页面后数据不会丢失
+// 应用使用后端API进行数据存储和获取
 
 // 初始化应用
 async function initializeApp() {

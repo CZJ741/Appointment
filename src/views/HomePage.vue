@@ -6,6 +6,10 @@
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 text-shadow">
           戒毒人员亲属探访预约系统
         </h1>
+        <!-- 探访人信息显示 -->
+        <div v-if="currentUser" class="mb-8 text-white text-lg font-medium">
+          当前账号: {{ currentUser.username }} | 姓名: {{ currentUser.full_name }}
+        </div>
         <p class="text-xl text-white mb-8 text-shadow">
           便捷、规范、安全的探访预约服务
         </p>
@@ -208,11 +212,18 @@
 </template>
 
 <script>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useStore } from 'vuex'
 
 export default {
   name: 'HomePage',
   setup() {
+    const store = useStore()
+    
+    // 获取当前登录用户信息
+    const currentUser = computed(() => {
+      return store.state.user && store.state.user.isLoggedIn ? store.state.user.info : null
+    })
     // 页面加载时执行动画
     onMounted(() => {
       // Hero 区域标题动画 - 使用CSS类
@@ -261,7 +272,7 @@ export default {
       })
     }
 
-    return {}
+    return { currentUser }
   }
 }
 </script>

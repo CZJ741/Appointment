@@ -1,0 +1,1 @@
+# 使common成为一个有效的Django应用

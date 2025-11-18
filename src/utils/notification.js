@@ -102,58 +102,82 @@ class NotificationManager {
   }
 
   // 成功通知
-  success(options) {
-    if (typeof options === 'string') {
+  success(title, message) {
+    if (message) {
       return this.createNotification({
         type: 'success',
-        title: options
+        title,
+        message
+      })
+    } else if (typeof title === 'string') {
+      return this.createNotification({
+        type: 'success',
+        title
       })
     }
     return this.createNotification({
       type: 'success',
-      ...options
+      ...title
     })
   }
 
   // 错误通知
-  error(options) {
-    if (typeof options === 'string') {
+  error(title, message) {
+    if (message) {
       return this.createNotification({
         type: 'error',
-        title: options
+        title,
+        message
+      })
+    } else if (typeof title === 'string') {
+      return this.createNotification({
+        type: 'error',
+        title
       })
     }
     return this.createNotification({
       type: 'error',
-      ...options
+      ...title
     })
   }
 
   // 警告通知
-  warning(options) {
-    if (typeof options === 'string') {
+  warning(title, message) {
+    if (message) {
       return this.createNotification({
         type: 'warning',
-        title: options
+        title,
+        message
+      })
+    } else if (typeof title === 'string') {
+      return this.createNotification({
+        type: 'warning',
+        title
       })
     }
     return this.createNotification({
       type: 'warning',
-      ...options
+      ...title
     })
   }
 
   // 信息通知
-  info(options) {
-    if (typeof options === 'string') {
+  info(title, message) {
+    if (message) {
       return this.createNotification({
         type: 'info',
-        title: options
+        title,
+        message
+      })
+    } else if (typeof title === 'string') {
+      return this.createNotification({
+        type: 'info',
+        title
       })
     }
     return this.createNotification({
       type: 'info',
-      ...options
+      ...title
     })
   }
 }

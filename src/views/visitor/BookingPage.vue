@@ -157,21 +157,33 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">与戒毒人员关系 <span class="text-red-500">*</span></label>
-            <select
-              v-model="formData.relationship"
-              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors"
-              required
-            >
-              <option value="">请选择关系</option>
-              <option value="配偶">配偶</option>
-              <option value="父母">父母</option>
-              <option value="子女">子女</option>
-              <option value="兄弟姐妹">兄弟姐妹</option>
-              <option value="其他亲属">其他亲属</option>
-            </select>
-            <span v-if="errors.relationship" class="text-red-500 text-xs mt-1 block">{{ errors.relationship }}</span>
-          </div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">与戒毒人员关系 <span class="text-red-500">*</span></label>
+          <select
+            v-model="formData.relationship"
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors"
+            required
+          >
+            <option value="">请选择关系</option>
+            <option value="配偶">配偶</option>
+            <option value="父母">父母</option>
+            <option value="子女">子女</option>
+            <option value="兄弟姐妹">兄弟姐妹</option>
+            <option value="其他亲属">其他亲属</option>
+          </select>
+          <span v-if="errors.relationship" class="text-red-500 text-xs mt-1 block">{{ errors.relationship }}</span>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">预约原因 <span class="text-red-500">*</span></label>
+          <textarea
+            v-model="formData.appointmentReason"
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors"
+            placeholder="请输入预约原因"
+            rows="3"
+            required
+          ></textarea>
+          <span v-if="errors.appointmentReason" class="text-red-500 text-xs mt-1 block">{{ errors.appointmentReason }}</span>
+        </div>
         </div>
 
         <div class="mt-8 flex justify-end">
@@ -393,7 +405,9 @@ export default {
     const router = useRouter()
     const currentStep = ref(1)
     const isSubmitting = ref(false)
-    const errors = reactive({})
+    const errors = reactive({
+      appointmentReason: '' // 添加预约原因错误字段
+    })
 
     // 表单数据
     const formData = reactive({
@@ -404,6 +418,7 @@ export default {
       address: '',
       patientName: '',
       relationship: '',
+      appointmentReason: '', // 添加预约原因字段
       visitors: []
     })
 
@@ -447,6 +462,7 @@ export default {
       errors.address = ''
       errors.patientName = ''
       errors.relationship = ''
+      errors.appointmentReason = ''
 
       if (!formData.visitorName.trim()) {
         errors.visitorName = '请输入姓名'
@@ -486,6 +502,11 @@ export default {
 
       if (!formData.relationship) {
         errors.relationship = '请选择与戒毒人员关系'
+        isValid = false
+      }
+      
+      if (!formData.appointmentReason.trim()) {
+        errors.appointmentReason = '请输入预约原因'
         isValid = false
       }
 
@@ -583,45 +604,47 @@ export default {
       isSubmitting.value = true
 
       try {
-        // 检查用户是否已登录
-        if (!store.state.userWxid) {
-          // 实际项目中应该调用微信API获取wxid
-          // 这里模拟一个wxid用于演示
-          const mockWxid = `wxid_${Date.now()}`
-          await store.dispatch('userLogin', mockWxid)
+        // 确保用户已登录（使用用户名密码系统）
+        if (!store.getters.isUserLoggedInByUsername) {
+          window.showNotification('error', '登录失败', '请先登录后再预约')
+          router.push('/login')
+          isSubmitting.value = false
+          return
         }
         
-        // 准备探访人（申请人）信息
-        const applicantVisitor = {
-          name: formData.visitorName,
-          gender: formData.gender,
-          idCard: formData.idCard,
-          phone: formData.phone,
-          relationship: formData.relationship,
-          id: `visitor-${Date.now()}-applicant`
-        }
+        // 获取当前日期时间作为预约时间（简化处理，实际应该让用户选择）
+        const now = new Date()
+        const appointmentTime = now.toISOString()
         
-        // 准备提交数据：包含申请人和亲属信息
+        // 准备提交数据：转换为后端期望的格式和字段名
         const appointmentData = {
-          visitors: [
-            // 首先添加申请人信息
-            applicantVisitor,
-            // 然后添加其他亲属信息（现在没有默认的第一个亲属）
-            ...formData.visitors.map((visitor, index) => ({
-              ...visitor,
-              id: `visitor-${Date.now()}-${index}`
-            }))
-          ],
-          // 添加戒毒人员信息
-          patientName: formData.patientName,
-          applicantAddress: formData.address
+          // 主访客人信息（使用下划线命名）
+          visitor_name: formData.visitorName,
+          visitor_gender: formData.gender,
+          visitor_id_card: formData.idCard,
+          visitor_phone: formData.phone,
+          visitor_address: formData.address,
+          
+          // 戒毒人员信息
+          prisoner_name: formData.patientName,
+          relationship: formData.relationship,
+          
+          // 使用用户输入的预约原因
+        appointment_reason: formData.appointmentReason,
+          appointment_time: appointmentTime,
+          
+          // 转换亲属信息（如果有）
+          relatives: formData.visitors.map(visitor => ({
+            name: visitor.name,
+            gender: visitor.gender,
+            id_card: visitor.idCard, // 转换为下划线命名
+            phone: visitor.phone,
+            relationship: visitor.relationship
+          }))
         }
 
-        // 提交预约，包含wxid参数
-        const newAppointment = await store.dispatch('createAppointment', {
-          appointmentData,
-          wxid: store.state.userWxid
-        })
+        // 提交预约
+        const newAppointment = await store.dispatch('createAppointment', appointmentData)
         
         // 显示成功消息
         window.showNotification('success', '预约成功', `您的预约申请已提交，将安排在${newAppointment.month}进行，请耐心等待审核结果`)

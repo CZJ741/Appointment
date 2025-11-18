@@ -3,7 +3,7 @@
 // 模拟的管理员用户数据
 const MOCK_ADMIN_USER = {
   username: 'admin',
-  password: 'password123', // 实际应用中应该使用加密密码
+  password: 'admin123', // 实际应用中应该使用加密密码
   name: '系统管理员',
   role: 'admin'
 }
@@ -26,47 +26,39 @@ const validateCaptcha = (input) => {
   return storedCaptcha && input.toUpperCase() === storedCaptcha.toUpperCase()
 }
 
-// 验证管理员登录
-const validateAdminLogin = (username, password, captcha) => {
-  // 验证验证码
-  if (!validateCaptcha(captcha)) {
-    return {
-      success: false,
-      message: '验证码错误'
-    }
-  }
-
-  // 验证用户名和密码
-  if (username === MOCK_ADMIN_USER.username && password === MOCK_ADMIN_USER.password) {
-    // 生成模拟token（实际应用中应该由后端生成）
-    const token = `mock_token_${Date.now()}`
-    
-    // 存储登录状态
-    localStorage.setItem('admin_token', token)
-    localStorage.setItem('admin_user', JSON.stringify({
-      username: MOCK_ADMIN_USER.username,
-      name: MOCK_ADMIN_USER.name,
-      role: MOCK_ADMIN_USER.role
-    }))
-    
-    return {
-      success: true,
-      token,
-      user: {
-        username: MOCK_ADMIN_USER.username,
-        name: MOCK_ADMIN_USER.name,
-        role: MOCK_ADMIN_USER.role
+// 管理员登录函数 - 使用前端模拟数据进行验证
+const validateAdminLogin = async (username, password, captcha) => {
+  try {
+    // 使用前端模拟数据进行验证
+    if (username === MOCK_ADMIN_USER.username && password === MOCK_ADMIN_USER.password) {
+      // 生成模拟token
+      const mockToken = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      // 保存登录状态
+      localStorage.setItem('admin_token', mockToken)
+      localStorage.setItem('admin_user', JSON.stringify(MOCK_ADMIN_USER))
+      
+      return { 
+        success: true, 
+        token: mockToken, 
+        user: MOCK_ADMIN_USER 
+      }
+    } else {
+      return { 
+        success: false, 
+        message: '用户名或密码错误' 
       }
     }
-  }
-  
-  return {
-    success: false,
-    message: '用户名或密码错误'
+  } catch (error) {
+    console.error('登录错误:', error)
+    return { 
+      success: false, 
+      message: '登录过程中发生错误' 
+    }
   }
 }
 
-// 检查是否已登录
+// 检查用户是否已登录
 const isAdminLoggedIn = () => {
   const token = localStorage.getItem('admin_token')
   return !!token
@@ -100,22 +92,19 @@ const validateToken = (token) => {
 
 // 获取登录状态
 const getLoginStatus = () => {
-  const token = localStorage.getItem('admin_token')
-  if (!token) {
-    return { loggedIn: false }
-  }
-  
-  const isValid = validateToken(token)
-  if (!isValid) {
-    // token过期，清除登录状态
-    logoutAdmin()
-    return { loggedIn: false }
-  }
-  
-  const user = getCurrentAdmin()
-  return {
-    loggedIn: true,
-    user
+  try {
+    const token = localStorage.getItem('admin_token')
+    if (!token) {
+      return { loggedIn: false, user: null }
+    }
+    
+    // 从localStorage获取用户信息
+    // 注意：在真实项目中，应该定期向后端验证token的有效性
+    const user = getCurrentAdmin()
+    return { loggedIn: !!user, user: user }
+  } catch (error) {
+    console.error('获取登录状态失败:', error)
+    return { loggedIn: false, user: null }
   }
 }
 

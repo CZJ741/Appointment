@@ -428,13 +428,16 @@ export default {
       }
     }
 
-    onMounted(() => {
+    onMounted(async () => {
       // 检查是否已登录
       if (!store.state.isAdminLoggedIn) {
         router.push('/admin/login')
         return
       }
 
+      // 从后端获取最新的预约数据
+      await store.dispatch('initializeData')
+      
       // 初始化图表
       initChart()
       
