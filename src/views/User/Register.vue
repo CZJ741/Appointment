@@ -115,9 +115,11 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import notification from '@/utils/notification.js'
+import { useStore } from 'vuex'
 
 const router = useRouter()
 const isLoading = ref(false)
+const store = useStore()
 
 // 使用reactive更好地管理表单数据
 const form = reactive({
@@ -170,24 +172,10 @@ const handleRegister = async () => {
 
   isLoading.value = true
   try {
-    // 调用后端API进行注册
-    const response = await fetch('/api/register/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: form.username,
-        email: form.email,
-        full_name: form.full_name,
-        password: form.password,
-        password_confirm: form.confirmPassword
-      })
-    })
+    // 使用store中的register action进行注册
+    const result = await store.dispatch('userRegister', form)
     
-    const data = await response.json()
-    
-    if (response.ok) {
+    if (result && result.success) {
       notification.success('注册成功', '请登录')
       // 跳转到登录页面，添加查询参数
       router.push({
@@ -196,20 +184,20 @@ const handleRegister = async () => {
       })
     } else {
       // 处理验证错误
-      if (data.error && typeof data.error === 'object') {
+      if (result && result.error && typeof result.error === 'object') {
         // 如果错误是对象形式
         const errorMessages = []
-        for (const field in data.error) {
-          errorMessages.push(`${field}: ${data.error[field].join(', ')}`)
+        for (const field in result.error) {
+          errorMessages.push(`${field}: ${result.error[field].join(', ')}`)
         }
         notification.error('注册失败', errorMessages.join('; '))
       } else {
-        notification.error('注册失败', data.error || '请稍后重试')
+        notification.error('注册失败', result?.error?.message || '请稍后重试')
       }
     }
   } catch (error) {
     console.error('注册错误:', error)
-    notification.error('注册失败', '网络错误，请检查您的连接后重试')
+    notification.error('注册失败', error.message || '请检查您的连接后重试')
   } finally {
     isLoading.value = false
   }

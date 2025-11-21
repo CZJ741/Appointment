@@ -78,7 +78,9 @@
                 </div>
                 <div>
                   <div class="text-sm text-gray-500">探访时间</div>
-                  <div class="font-medium">{{ appointment.visitTime }}</div>
+                  <div class="font-medium">
+                    {{ appointment.status === 'approved' && appointment.visitTime ? appointment.visitTime : '待审核后确定' }}
+                  </div>
                 </div>
                 <div>
                   <div class="text-sm text-gray-500">排队号</div>
@@ -229,7 +231,10 @@
                 </div>
                 <div>
                   <span class="text-gray-500">探访时间:</span> 
-                  <span class="font-medium">{{ selectedAppointment.visitTime }}</span>
+                  <span class="font-medium">
+                    {{ selectedAppointment.status === 'approved' && selectedAppointment.visitTime ? 
+                       selectedAppointment.visitTime : '待审核后确定' }}
+                  </span>
                 </div>
                 <div>
                   <span class="text-gray-500">排队号:</span> 

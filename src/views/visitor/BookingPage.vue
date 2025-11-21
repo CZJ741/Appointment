@@ -340,6 +340,7 @@
             <div class="md:col-span-2"><span class="text-gray-600">联系地址：</span><span class="font-medium">{{ formData.address }}</span></div>
             <div><span class="text-gray-600">戒毒人员姓名：</span><span class="font-medium">{{ formData.patientName }}</span></div>
             <div><span class="text-gray-600">与戒毒人员关系：</span><span class="font-medium">{{ formData.relationship }}</span></div>
+            <div class="md:col-span-2"><span class="text-gray-600">预约原因：</span><span class="font-medium">{{ formData.appointmentReason }}</span></div>
           </div>
         </div>
 
@@ -612,10 +613,6 @@ export default {
           return
         }
         
-        // 获取当前日期时间作为预约时间（简化处理，实际应该让用户选择）
-        const now = new Date()
-        const appointmentTime = now.toISOString()
-        
         // 准备提交数据：转换为后端期望的格式和字段名
         const appointmentData = {
           // 主访客人信息（使用下划线命名）
@@ -631,7 +628,6 @@ export default {
           
           // 使用用户输入的预约原因
         appointment_reason: formData.appointmentReason,
-          appointment_time: appointmentTime,
           
           // 转换亲属信息（如果有）
           relatives: formData.visitors.map(visitor => ({
@@ -655,7 +651,9 @@ export default {
         }, 1500)
       } catch (error) {
         console.error('提交预约失败:', error)
-        window.showNotification('error', '提交失败', '请稍后重试')
+        // 显示API返回的具体错误信息，如果有的话
+        const errorMessage = error.response?.data?.detail || error || '请稍后重试'
+        window.showNotification('error', '提交失败', errorMessage)
       } finally {
         isSubmitting.value = false
       }
@@ -690,7 +688,7 @@ export default {
 /* 输入框聚焦效果增强 */
 input:focus, select:focus {
   outline: none;
-  ring: 2px solid #4361ee;
+  box-shadow: 0 0 0 2px #4361ee;
   border-color: #4361ee;
 }
 

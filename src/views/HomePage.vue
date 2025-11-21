@@ -180,7 +180,7 @@
             </div>
             <h3 class="text-xl font-semibold mb-2">电话咨询</h3>
             <p class="text-gray-600">工作日 9:00-17:00</p>
-            <p class="text-gray-800 font-medium mt-2">010-12345678</p>
+            <p class="text-gray-800 font-medium mt-2">xxx-xxxxxxxx</p>
           </div>
 
           <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
@@ -191,7 +191,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">现场咨询</h3>
-            <p class="text-gray-600">北京市朝阳区某街道某号</p>
+            <p class="text-gray-600">xx街道xx号</p>
             <p class="text-gray-800 font-medium mt-2">接待大厅服务台</p>
           </div>
 
@@ -203,7 +203,7 @@
             </div>
             <h3 class="text-xl font-semibold mb-2">邮箱咨询</h3>
             <p class="text-gray-600">工作日 24小时内回复</p>
-            <p class="text-gray-800 font-medium mt-2">contact@jiedu-appointment.com</p>
+            <p class="text-gray-800 font-medium mt-2">xxx@xxxx.com</p>
           </div>
         </div>
       </div>

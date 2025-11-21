@@ -15,6 +15,20 @@ class Appointment(models.Model):
         ('rejected', '已拒绝'),     # 管理员已拒绝的预约
         ('completed', '已完成'),    # 已完成的探访
         ('cancelled', '已取消'),    # 已取消的预约
+        ('queued', '排队中'),       # 在排队等待的预约
+    )
+    
+    # 预约排队相关字段
+    queue_month = models.IntegerField(
+        verbose_name='预约月份',
+        help_text='用户被分配的预约月份，格式为YYYYMM',
+        null=True,
+        blank=True
+    )
+    queue_position = models.IntegerField(
+        verbose_name='排队位置',
+        help_text='在该月份预约中的排队位置',
+        default=0
     )
     
     # 关联到用户（预约创建者）
@@ -72,7 +86,9 @@ class Appointment(models.Model):
     # 预约信息
     appointment_time = models.DateTimeField(
         verbose_name='预约时间',
-        help_text='计划探访的日期和时间'
+        help_text='计划探访的日期和时间',
+        null=True,
+        blank=True
     )
     status = models.CharField(
         max_length=20, 

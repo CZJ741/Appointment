@@ -12,6 +12,9 @@ class User(AbstractUser):
     # 姓名字段，用于显示用户的真实姓名
     full_name = models.CharField(max_length=100, verbose_name='姓名', help_text='用户的真实姓名')
     
+    # 电话号码字段，用于联系用户
+    phone_number = models.CharField(max_length=11, verbose_name='电话号码', help_text='用户的手机号码', null=True, blank=True)
+    
     class Meta:
         verbose_name = '用户'
         verbose_name_plural = '用户'

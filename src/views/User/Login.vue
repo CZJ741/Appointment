@@ -57,11 +57,11 @@
             </label>
           </div>
 
-          <div class="text-sm">
+          <!-- <div class="text-sm">
             <a href="#" class="font-medium text-primary hover:text-primary-dark">
               忘记密码？
             </a>
-          </div>
+          </div> -->
         </div>
 
         <div>

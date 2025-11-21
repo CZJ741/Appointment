@@ -3,7 +3,7 @@ import { getLoginStatus, logoutAdmin, validateAdminLogin } from '../utils/auth.j
 import axios from 'axios'
 
 // 配置axios基础URL
-axios.defaults.baseURL = '/api'
+axios.defaults.baseURL = 'http://apb.vgit.cn/api'
 
 // 请求拦截器，添加token
 axios.interceptors.request.use(config => {
@@ -12,9 +12,16 @@ axios.interceptors.request.use(config => {
     config.headers = {}
   }
   
-  // 管理员接口(/appointment/all/)不需要token，只有普通用户接口需要token
-  if (!(config.url && config.url.includes('/appointment/all/'))) {
-    // 普通用户接口，使用user_token
+  // 管理员接口（包括批准、拒绝、详情、所有预约列表等）不需要token验证
+  // 只对普通用户接口添加token
+  const isAdminApi = config.url && (
+    config.url.includes('/appointment/all/') ||
+    (config.url.includes('/appointment/') && 
+    (config.url.includes('/approve/') || config.url.includes('/reject/') || config.url.includes('/detail/')))
+  )
+  
+  // 只有非管理员接口才需要添加用户token
+  if (!isAdminApi) {
     const userToken = localStorage.getItem('user_token')
     if (userToken) {
       config.headers.Authorization = `Token ${userToken}`
@@ -153,17 +160,25 @@ export default createStore({
         state.appointments[index].status = status
         if (data) {
           // 先移除会被特殊处理的属性
-          const { approvalInfo, visitDate, month, ...otherData } = data
+          const { approvalInfo, visitDate, month, visitTime, ...otherData } = data
           
           // 特殊处理特定属性
           if (approvalInfo) {
             state.appointments[index].approvalInfo = approvalInfo
+            // 确保visitTime从approvalInfo中正确设置
+            if (approvalInfo.receptionTime) {
+              state.appointments[index].visitTime = approvalInfo.receptionTime
+            }
           }
           if (visitDate) {
             state.appointments[index].visitDate = visitDate
           }
           if (month) {
             state.appointments[index].month = month
+          }
+          // 直接设置visitTime（如果有）
+          if (visitTime) {
+            state.appointments[index].visitTime = visitTime
           }
           
           // 合并其他属性
@@ -362,23 +377,77 @@ export default createStore({
       }
     },
     // 审批预约
-    async approveAppointment({ commit }, { id, approvalData, visitDate, targetMonth }) {
+    async approveAppointment({ commit }, { id, approvalInfo, visitDate, targetMonth: originalTargetMonth }) {
       try {
-        // 调用后端API批准预约
-         const response = await axios.put(`/appointment/${id}/approve/`, {
-          approvalData,
+        // 添加日志以调试日期传递问题
+        console.log('approveAppointment参数:', {
+          id,
           visitDate,
-          targetMonth
+          receptionTime: approvalInfo?.receptionTime
         })
         
-        const updatedAppointment = response.data
+        // 确保visitDate是字符串格式且有效
+        let formattedVisitDate = visitDate
+        if (visitDate) {
+          // 如果visitDate是对象，转换为YYYY-MM-DD格式字符串
+          if (typeof visitDate === 'object' && visitDate !== null) {
+            formattedVisitDate = visitDate.toISOString().split('T')[0]
+            console.log('转换日期对象为字符串:', formattedVisitDate)
+          }
+        } else {
+          console.error('错误: 没有提供visitDate参数')
+          throw new Error('探访日期不能为空')
+        }
+        
+        // 构建完整的探访日期时间字符串
+        const fullDateTimeStr = formattedVisitDate && approvalInfo?.receptionTime 
+          ? `${formattedVisitDate} ${approvalInfo.receptionTime}` 
+          : formattedVisitDate // 如果没有时间，至少传递日期
+          
+        console.log('构建的fullDateTimeStr:', fullDateTimeStr)
+        
+        // 确保targetMonth始终基于实际指定的探访日期构建
+        let targetMonth = originalTargetMonth
+        if (formattedVisitDate) {
+          try {
+            // 解析visitDate格式 (YYYY-MM-DD)
+            const dateParts = formattedVisitDate.split('-')
+            if (dateParts.length === 3) {
+              const year = dateParts[0]
+              const month = dateParts[1].padStart(2, '0') // 确保月份是两位数字
+              targetMonth = `${year}-${month}`
+              console.log('构建的targetMonth:', targetMonth)
+            }
+          } catch (error) {
+            console.error('构建targetMonth失败:', error)
+          }
+        }
+        
+        // 调用后端API批准预约
+         const response = await axios.put(`/appointment/${id}/approve/`, {
+          approvalInfo,
+          visit_date: fullDateTimeStr, // 确保总是传递日期信息，使用后端期望的参数名
+          targetMonth // 传递正确的月份信息
+        })
+        
+        console.log('API响应:', response.data)
+        
+        // 创建包含探访时间的更新数据
+        const updateData = {
+          ...response.data,
+          visitTime: approvalInfo.receptionTime, // 确保探访时间被正确保存
+          // 构建完整的探访日期时间字符串
+          visitDate: visitDate,
+          appointment_time: fullDateTimeStr ? new Date(fullDateTimeStr).toISOString() : null
+        }
+        
         commit('UPDATE_APPOINTMENT_STATUS', {
           id,
           status: 'approved',
-          data: updatedAppointment
+          data: updateData
         })
         
-        return updatedAppointment
+        return updateData
       } catch (error) {
         console.error('批准预约失败:', error)
         throw error.response?.data?.detail || error.message
@@ -492,6 +561,31 @@ export default createStore({
       commit('INIT_LOGIN_STATUS')
     },
 
+    // 用户注册（新的用户名密码系统）
+    async userRegister({ commit }, registrationData) {
+      try {
+        // 将前端的confirmPassword字段映射到后端需要的password_confirm字段
+        const requestData = {
+          ...registrationData,
+          password_confirm: registrationData.confirmPassword,
+          // 移除原始的confirmPassword字段
+          confirmPassword: undefined
+        }
+        // 调用后端API进行用户注册
+        const response = await axios.post('/register/', requestData)
+        
+        // 返回成功结果
+        return { success: true, data: response.data }
+      } catch (error) {
+        console.error('用户注册失败:', error)
+        // 返回错误信息，保持与login接口一致的错误处理格式
+        return { 
+          success: false, 
+          error: error.response?.data || { message: error.message || '注册失败，请稍后重试' } 
+        }
+      }
+    },
+    
     // 用户登录（新的用户名密码系统）
     async userLogin({ commit }, credentials) {
       try {

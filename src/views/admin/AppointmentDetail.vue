@@ -58,7 +58,7 @@
           <h2 class="text-lg font-medium text-gray-900">基本信息</h2>
         </div>
         <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <div class="text-sm text-gray-500">预约月份</div>
               <div class="font-medium">{{ appointment.month }}</div>
@@ -71,7 +71,7 @@
             </div>
             <div>
               <div class="text-sm text-gray-500">探访时间</div>
-              <div class="font-medium">{{ appointment.visitTime }}</div>
+              <div class="font-medium">{{ appointment?.visitTime || '待审核后确定' }}</div>
             </div>
             <div>
               <div class="text-sm text-gray-500">排队号</div>
@@ -84,6 +84,18 @@
             <div>
               <div class="text-sm text-gray-500">预约人数</div>
               <div class="font-medium">{{ appointment.visitors.length }}人</div>
+            </div>
+            <div class="md:col-span-2 lg:col-span-3">
+              <div class="text-sm text-gray-500">戒毒人员姓名</div>
+              <div class="font-medium">{{ appointment.prisoner_name }}</div>
+            </div>
+            <div class="md:col-span-2 lg:col-span-3">
+              <div class="text-sm text-gray-500">联系地址</div>
+              <div class="font-medium">{{ appointment.visitor_address || '未提供' }}</div>
+            </div>
+            <div class="md:col-span-2 lg:col-span-3">
+              <div class="text-sm text-gray-500">预约原因</div>
+              <div class="font-medium">{{ appointment.appointment_reason || '未提供' }}</div>
             </div>
           </div>
         </div>
@@ -197,28 +209,34 @@
           <template v-if="appointment.status === 'pending'">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">探访日期</label>
-                <div class="flex items-center">
-                  <div class="relative flex-grow">
-                    <input
-                      v-model="selectedVisitDate"
-                      type="date"
-                      :min="minDate"
-                      @change="handleDateChange"
-                      :class="isThirdWednesday ? 
-                        'w-full px-4 py-2 border-2 border-green-500 bg-green-50 rounded-md focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm' : 
-                        'w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors duration-200'"
-                    />
-                    <!-- 添加背景提示 -->
-                    <div v-if="isThirdWednesday" class="absolute -inset-0.5 bg-green-100 rounded-md blur opacity-50 z-0"></div>
-                  </div>
-                  <span v-if="isThirdWednesday" class="ml-3 px-3 py-2 bg-green-500 text-white rounded-full text-sm font-bold shadow-md">探访日</span>
-                  <span v-else-if="selectedVisitDate" class="ml-3 px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium">非探访日</span>
+                <div class="relative flex-grow">
+                  <select
+                    v-model="selectedVisitDate"
+                    :class="selectedVisitDate ? 
+                      'w-full px-4 py-2 border-2 border-green-500 bg-green-50 rounded-md focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm' : 
+                      'w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors duration-200'"
+                  >
+                    <option value="">请选择探访日期</option>
+                    <option v-for="dateOption in visitDateOptions" :key="dateOption.value" :value="dateOption.value">
+                      {{ dateOption.label }}
+                    </option>
+                  </select>
                 </div>
-                <div v-if="isThirdWednesday" class="mt-2 text-sm text-green-700 bg-green-50 p-2 rounded-md border border-green-200">
-                  <i class="text-green-500 mr-1">✓</i> 探访日（每月第三个星期三）- 推荐选择
-                </div>
-                <div v-else-if="selectedVisitDate" class="mt-2 text-sm text-yellow-700">
-                  建议选择每月第三个星期三作为探访日以优化安排
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">探访时间</label>
+                <div class="relative flex-grow">
+                  <select
+                    v-model="selectedVisitTime"
+                    :class="selectedVisitTime ? 
+                      'w-full px-4 py-2 border-2 border-green-500 bg-green-50 rounded-md focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm' : 
+                      'w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary transition-colors duration-200'"
+                  >
+                    <option value="">请选择探访时间</option>
+                    <option v-for="time in visitTimeOptions" :key="time" :value="time">
+                      {{ time }}
+                    </option>
+                  </select>
                 </div>
             </div>
             <button 
@@ -339,7 +357,13 @@ export default {
     const rejectReason = ref('')
     const rejectError = ref('')
     const selectedVisitDate = ref('')
-    const isThirdWednesday = ref(false)
+    const selectedVisitTime = ref('')
+    const visitDateOptions = ref([])
+    // 探访时间选项 - 提供几个预设时间（使用ref保持响应式）
+    const visitTimeOptions = ref([
+      '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+    ])
 
     // 获取预约ID
     const appointmentId = computed(() => route.params.id)
@@ -349,11 +373,35 @@ export default {
       return store.getters.getAppointmentById(appointmentId.value)
     })
     
-    // 最小可选择日期（今天）
-    const minDate = computed(() => {
-      const today = new Date()
-      return today.toISOString().split('T')[0]
-    })
+    // 生成未来12个月的探访日期选项
+    const generateVisitDateOptions = () => {
+      const options = []
+      const now = new Date()
+      
+      // 生成从当月开始的12个月的探访日期
+      for (let i = 0; i < 12; i++) {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1)
+        const year = targetDate.getFullYear()
+        const month = targetDate.getMonth() + 1 // 1-indexed
+        
+        const thirdWednesday = getThirdWednesdayOfMonth(year, month)
+        const visitDate = new Date(thirdWednesday)
+        
+        // 格式化显示标签
+        const label = `${year}年${month}月探访日（${visitDate.getDate()}日 星期三）`
+        
+        // 只添加未来或今天的日期选项
+        const today = new Date().toISOString().split('T')[0]
+        if (thirdWednesday >= today) {
+          options.push({
+            value: thirdWednesday,
+            label: label
+          })
+        }
+      }
+      
+      return options
+    }
 
     // 格式化日期
     const formatDate = (dateString) => {
@@ -366,47 +414,7 @@ export default {
       })
     }
     
-    // 检查是否为每月第三个星期三
-  const checkThirdWednesday = (dateStr) => {
-    if (!dateStr) {
-      isThirdWednesday.value = false
-      return
-    }
-    
-    const date = new Date(dateStr)
-    
-    // 首先检查是否是星期三
-    if (date.getDay() !== 3) {
-      isThirdWednesday.value = false
-      return
-    }
-    
-    // 精确计算第三个星期三
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    
-    // 使用与getThirdWednesdayOfMonth相同的算法计算第三个星期三
-    const first = new Date(year, month, 1);
-    const firstDayOfWeek = first.getDay();
-    const daysToFirstWed = (3 - firstDayOfWeek + 7) % 7;
-    const firstWed = new Date(first);
-    firstWed.setDate(1 + daysToFirstWed);
-    const thirdWed = new Date(firstWed);
-    thirdWed.setDate(firstWed.getDate() + 14);
-    
-    // 跨月处理
-    if (thirdWed.getMonth() !== month) {
-      thirdWed.setDate(thirdWed.getDate() - 7);
-    }
-    
-    // 检查当前日期是否为第三个星期三
-    isThirdWednesday.value = date.getDate() === thirdWed.getDate()
-  }
-    
-    // 处理日期选择变化
-    const handleDateChange = (event) => {
-      checkThirdWednesday(event.target.value)
-    }
+    // 初始化探访日期选项
 
     // 格式化日期时间
     const formatDateTime = (dateString) => {
@@ -444,9 +452,13 @@ export default {
 
     // 批准预约 - 管理员通过日期选择器选择探访日期
     const handleApprove = async () => {
-      // 检查是否选择了日期
+      // 检查是否选择了日期和时间
       if (!selectedVisitDate.value) {
         alert('请选择探访日期！')
+        return
+      }
+      if (!selectedVisitTime.value) {
+        alert('请选择探访时间！')
         return
       }
       
@@ -460,25 +472,60 @@ export default {
         return
       }
       
-      // 从日期中提取目标月份
-      const year = visitDate.getFullYear()
-      const month = String(visitDate.getMonth() + 1).padStart(2, '0')
-      const targetMonth = `${year}-${month}`
+      // 构建targetMonth参数 (YYYY-MM格式)
+      let targetMonth = null
+      if (selectedVisitDate.value) {
+        try {
+          const dateParts = selectedVisitDate.value.split('-')
+          if (dateParts.length === 3) {
+            const year = dateParts[0]
+            const month = dateParts[1].padStart(2, '0')
+            targetMonth = `${year}-${month}`
+          }
+        } catch (error) {
+          console.error('构建targetMonth失败:', error)
+          alert('日期格式错误，请重试')
+          return
+        }
+      }
+      
+      if (!targetMonth) {
+        alert('无法确定目标月份，请重试')
+        return
+      }
       
       // 检查所选月份是否已有批准的预约
-      const targetMonthAppointments = store.state.appointments.filter(app => 
-        app.status === 'approved' && 
-        app.month === targetMonth
-      )
+      // 使用实际选择的探访日期月份进行检查，与后端逻辑保持一致
+      const [targetYear, targetMonthNum] = targetMonth.split('-')
+      const targetMonthAppointments = store.state.appointments.filter(app => {
+        // 只检查已批准的预约
+        if (app.status !== 'approved') return false
+        
+        // 只检查其他预约（排除当前正在处理的预约）
+        if (app.id === appointment.value.id) return false
+        
+        // 优先使用appointment_time字段（已批准预约会有此字段）
+        if (app.appointment_time) {
+          try {
+            const appointmentDate = new Date(app.appointment_time)
+            const appYear = appointmentDate.getFullYear().toString()
+            const appMonth = String(appointmentDate.getMonth() + 1).padStart(2, '0')
+            return appYear === targetYear && appMonth === targetMonthNum
+          } catch (error) {
+            console.error('解析appointment_time失败:', error)
+            return false
+          }
+        }
+        
+        return false
+      })
       
       if (targetMonthAppointments.length > 0) {
         alert(`所选月份 ${targetMonth} 已有批准的预约，请选择其他月份！`)
         return
       }
       
-      const confirmMessage = isThirdWednesday.value 
-        ? `确定要批准该预约吗？探访日期将安排在 ${selectedVisitDate.value}（探访日）。`
-        : `确定要批准该预约吗？探访日期将安排在 ${selectedVisitDate.value}。`
+      const confirmMessage = `确定要批准该预约吗？探访日期将安排在 ${selectedVisitDate.value}（探访日），探访时间为 ${selectedVisitTime.value}。`
       
       if (confirm(confirmMessage)) {
         try {
@@ -488,7 +535,7 @@ export default {
             id: appointment.value.id,
             approvalInfo: {
               appointmentNumber: `AP${Date.now()}`,
-              receptionTime: `${appointment.value.visitTime}`,
+              receptionTime: selectedVisitTime.value, // 使用选择器选择的时间
               receptionLocation: '探访室A',
               receptionist: '值班人员',
               receptionistPhone: '010-12345678'
@@ -498,9 +545,11 @@ export default {
           })
           
           // 成功通知
-          alert('预约已成功批准并分配探访日期！')
+          alert('预约已成功批准并分配探访日期和时间！')
         } catch (error) {
-          alert('操作失败，请稍后重试')
+          // 显示后端返回的具体错误信息，如果没有则显示通用错误提示
+          const errorMessage = error.response?.data?.error || error.message || '操作失败，请稍后重试'
+          alert(`错误：${errorMessage}`)
           console.error('Approve error:', error)
         } finally {
           isProcessing.value = false
@@ -592,46 +641,56 @@ export default {
   }
     
     // 加载数据
-    const loadData = async () => {
-      loading.value = true
-      try {
-        // 确保数据已初始化
-        if (store.state.appointments.length === 0) {
-          await store.dispatch('initializeData')
-        }
-        
-        // 如果预约处于待审核状态，自动预选当前或预约月份的第三个星期三
-        if (appointment.value && appointment.value.status === 'pending') {
-          let targetYear, targetMonth
-          
-          if (appointment.value.month) {
-            // 从预约月份中提取年月
-            const [year, month] = appointment.value.month.split('-')
-            targetYear = parseInt(year)
-            targetMonth = parseInt(month) - 1 // JavaScript的月份从0开始
-          } else {
-            // 使用当前年月
-            const now = new Date()
-            targetYear = now.getFullYear()
-            targetMonth = now.getMonth()
+      const loadData = async () => {
+        loading.value = true
+        try {
+          // 确保数据已初始化
+          if (store.state.appointments.length === 0) {
+            await store.dispatch('initializeData')
           }
           
-          // 计算该月的第三个星期三
-          const thirdWednesdayDate = getThirdWednesdayOfMonth(targetYear, targetMonth)
-          const today = new Date().toISOString().split('T')[0]
+          // 生成探访日期选项
+          visitDateOptions.value = generateVisitDateOptions()
           
-          // 如果第三个星期三在今天或之后，则预选它
-          if (thirdWednesdayDate >= today) {
-            selectedVisitDate.value = thirdWednesdayDate
-            checkThirdWednesday(thirdWednesdayDate)
+          // 如果预约处于待审核状态，尝试预选当前或预约月份的第三个星期三
+          if (appointment.value && appointment.value.status === 'pending') {
+            let targetYear, targetMonth
+            
+            if (appointment.value.month) {
+              // 从预约月份中提取年月
+              const [year, month] = appointment.value.month.split('-')
+              targetYear = parseInt(year)
+              targetMonth = parseInt(month)
+            } else {
+              // 使用当前年月
+              const now = new Date()
+              targetYear = now.getFullYear()
+              targetMonth = now.getMonth() + 1
+            }
+            
+            // 计算该月的第三个星期三
+            const thirdWednesdayDate = getThirdWednesdayOfMonth(targetYear, targetMonth)
+            
+            // 尝试在选项中找到匹配的日期并预选
+            const option = visitDateOptions.value.find(opt => opt.value === thirdWednesdayDate)
+            if (option) {
+              selectedVisitDate.value = thirdWednesdayDate
+            } else if (visitDateOptions.value.length > 0) {
+              // 如果没有匹配的选项，预选第一个可用选项
+              selectedVisitDate.value = visitDateOptions.value[0].value
+            }
+            selectedVisitTime.value = ''; // 重置时间选择
           }
+          // 如果已经有批准的时间，设置默认值
+          else if (appointment.value && appointment.value.approvalInfo?.receptionTime) {
+            selectedVisitTime.value = appointment.value.approvalInfo.receptionTime;
+          }
+        } catch (error) {
+          console.error('加载数据失败:', error)
+        } finally {
+          loading.value = false
         }
-      } catch (error) {
-        console.error('加载数据失败:', error)
-      } finally {
-        loading.value = false
       }
-    }
 
     onMounted(() => {
       // 检查是否已登录
@@ -657,13 +716,13 @@ export default {
       rejectReason,
       rejectError,
       selectedVisitDate,
-      isThirdWednesday,
-      minDate,
+      selectedVisitTime,
+      visitDateOptions,
+      visitTimeOptions,
       formatDate,
       formatDateTime,
       getStatusText,
       getStatusClass,
-      handleDateChange,
       handleApprove,
       handleReject,
       confirmReject,

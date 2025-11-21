@@ -181,7 +181,7 @@
                 {{ appointment.visitors[0]?.name }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(appointment.visitDate) }}
+                {{ appointment.status === 'pending' ? '待审核后确定' : (appointment.visitDate ? formatDate(appointment.visitDate) : '未设置') }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span 
@@ -201,13 +201,6 @@
                 >
                   查看详情
                 </router-link>
-                <button 
-                  v-if="appointment.status === 'pending'"
-                  @click="handleQuickApprove(appointment)"
-                  class="text-green-600 hover:text-green-900 transition-colors duration-200"
-                >
-                  快速批准
-                </button>
               </td>
             </tr>
           </tbody>
@@ -220,12 +213,12 @@
     </div>
 
     <!-- 月度统计图表 -->
-    <div class="bg-white rounded-xl shadow-md p-6">
+    <!-- <div class="bg-white rounded-xl shadow-md p-6">
       <h2 class="text-lg font-medium text-gray-900 mb-6">月度预约统计</h2>
       <div class="h-64">
         <canvas ref="chartCanvas"></canvas>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -321,26 +314,7 @@ export default {
     }
 
     // 快速批准
-    const handleQuickApprove = async (appointment) => {
-      // 显示确认对话框
-      if (confirm(`确定要批准预约号 ${appointment.id} 吗？请在详情页面中设置具体的探访日期。`)) {
-        try {
-          await store.dispatch('approveAppointment', {
-            id: appointment.id,
-            approvalInfo: {
-              notes: '快速批准'
-            },
-            visitDate: null,
-            targetMonth: appointment.month || ''
-          })
-          // 显示成功消息
-          alert('预约已成功批准，请在详情页面中设置探访日期')
-        } catch (error) {
-          alert('操作失败，请稍后重试')
-          console.error('Quick approve error:', error)
-        }
-      }
-    }
+
 
     // 初始化图表
     const initChart = () => {
@@ -461,8 +435,7 @@ export default {
       formatDate,
       formatDateTime,
       getStatusText,
-      getStatusClass,
-      handleQuickApprove
+      getStatusClass
     }
   }
 }
