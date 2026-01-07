@@ -30,6 +30,30 @@
       </div>
     </section>
 
+    <!-- 公告栏目 -->
+    <section class="py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">系统公告</h2>
+          <p class="text-lg text-gray-600">了解最新的探访政策和系统通知</p>
+        </div>
+
+        <div class="space-y-6">
+          <div v-for="announcement in announcements" :key="announcement.id" class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">{{ announcement.title }}</h3>
+              <span class="text-sm text-gray-500">{{ formatDate(announcement.publishTime) }}</span>
+            </div>
+            <div class="text-gray-600 mb-4 whitespace-pre-wrap break-words">{{ announcement.content }}</div>
+            <div class="text-right text-sm text-gray-500">发布机关：{{ announcement.issuingAuthority }}</div>
+          </div>
+          <div v-if="announcements.length === 0" class="text-center py-8 text-gray-500">
+            暂无公告信息
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 预约规则区域 -->
     <section class="py-16 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +70,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">探访时间</h3>
-            <p class="text-gray-600">每月第3个星期三为接访日，具体探访时间段将在预约成功后通知</p>
+            <p class="text-gray-600">每月第3个星期三为接访日，预约可选定探访日，具体探访时间段将由管理员统一分配</p>
           </div>
 
           <div class="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 transition-transform duration-200">
@@ -55,8 +79,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 class="text-xl font-semibold mb-2">批次限制</h3>
-            <p class="text-gray-600">每月一个批次，每批次最多可预约3名亲属信息，请合理安排</p>
+            <h3 class="text-xl font-semibold mb-2">人数限制</h3>
+            <p class="text-gray-600">每次预约最多可登记3名探访人信息</p>
           </div>
 
           <div class="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 transition-transform duration-200">
@@ -66,7 +90,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">预约方式</h3>
-            <p class="text-gray-600">采用先到先得取号方式，名额有限，请及时完成预约</p>
+            <p class="text-gray-600">点击“立即预约” 填写预约表单，即可完成预约</p>
           </div>
 
           <div class="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 transition-transform duration-200">
@@ -76,7 +100,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">预约审核</h3>
-            <p class="text-gray-600">提交预约后，工作人员将进行审核，审核结果将在3个工作日内通知</p>
+            <p class="text-gray-600">提交预约后，工作人员将进行审核，审核结果将在5个工作日内通知</p>
           </div>
         </div>
       </div>
@@ -191,8 +215,8 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">现场咨询</h3>
-            <p class="text-gray-600">xx街道xx号</p>
-            <p class="text-gray-800 font-medium mt-2">接待大厅服务台</p>
+            <p class="text-gray-600">黄冈市黄州区体育路黄州理工中等专业学校西侧约110米</p>
+            <p class="text-gray-800 font-medium mt-2">黄冈市强制隔离戒毒所</p>
           </div>
 
           <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
@@ -214,6 +238,7 @@
 <script>
 import { onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
+import axios from 'axios'
 
 export default {
   name: 'HomePage',
@@ -224,6 +249,23 @@ export default {
     const currentUser = computed(() => {
       return store.state.user && store.state.user.isLoggedIn ? store.state.user.info : null
     })
+    
+    // 从Vuex store获取公告数据
+    const announcements = computed(() => {
+      return store.state.announcements || []
+    })
+    
+    // 格式化日期
+    const formatDate = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    }
+    
     // 页面加载时执行动画
     onMounted(() => {
       // Hero 区域标题动画 - 使用CSS类
@@ -241,9 +283,30 @@ export default {
         })
       }, 500)
 
+      // 获取公告数据
+      fetchAnnouncements()
+      
       // 其他区域滚动动画
       setupScrollAnimations()
     })
+    
+    // 获取公告数据
+    const fetchAnnouncements = async () => {
+      try {
+        // 调用后端API获取公告数据
+        console.log('正在请求公告数据...')
+        const response = await axios.get('/announcements/')
+        console.log('公告数据请求成功:', response.data)
+        // 更新Vuex状态
+        store.commit('SET_ANNOUNCEMENTS', response.data)
+        console.log('Vuex状态更新成功')
+      } catch (error) {
+        console.error('获取公告数据失败:', error)
+        console.error('错误详情:', error.response)
+        console.error('错误消息:', error.message)
+        // 出错时不设置数据，保持为空数组
+      }
+    }
 
     // 设置滚动动画
     const setupScrollAnimations = () => {
@@ -270,9 +333,14 @@ export default {
       document.querySelectorAll('.grid-cols-1 > div, .grid-cols-2 > div, .grid-cols-3 > div, .grid-cols-4 > div').forEach(item => {
         observer.observe(item)
       })
+      
+      // 观察公告项
+      document.querySelectorAll('.space-y-6 > div').forEach(item => {
+        observer.observe(item)
+      })
     }
 
-    return { currentUser }
+    return { currentUser, announcements, formatDate }
   }
 }
 </script>

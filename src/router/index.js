@@ -56,6 +56,18 @@ const router = createRouter({
       name: 'adminAppointmentDetail',
       component: () => import('../views/admin/AppointmentDetail.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/schedule',
+      name: 'adminSchedule',
+      component: () => import('../views/admin/ScheduleManagement.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/announcements',
+      name: 'adminAnnouncements',
+      component: () => import('../views/admin/Announcements.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

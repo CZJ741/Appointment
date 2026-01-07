@@ -4,7 +4,7 @@ from .models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'full_name')
+        fields = ('id', 'username', 'email', 'full_name', 'is_staff')
         read_only_fields = ('id',)
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -14,6 +14,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'full_name', 'password', 'password_confirm')
+    
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("用户名已存在")
+        return value
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:

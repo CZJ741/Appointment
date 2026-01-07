@@ -187,8 +187,31 @@ const handleRegister = async () => {
       if (result && result.error && typeof result.error === 'object') {
         // 如果错误是对象形式
         const errorMessages = []
-        for (const field in result.error) {
-          errorMessages.push(`${field}: ${result.error[field].join(', ')}`)
+        
+        // 处理可能的嵌套error结构 { error: { field: [...] } }
+        const errors = result.error.error || result.error
+        
+        for (const field in errors) {
+          let errorText = errors[field]
+          // 处理用户名重复的特殊情况
+          if (field === 'username') {
+            // 无论错误类型是什么，用户名重复都显示此提示
+            errorText = '此用户名已被使用！'
+          } else {
+            // 处理各种类型的错误信息
+            if (typeof errorText === 'object') {
+              if (Array.isArray(errorText)) {
+                errorText = errorText.join(', ')
+              } else if (errorText.message) {
+                errorText = errorText.message
+              } else {
+                errorText = String(errorText)
+              }
+            } else {
+              errorText = String(errorText)
+            }
+          }
+          errorMessages.push(errorText)
         }
         notification.error('注册失败', errorMessages.join('; '))
       } else {

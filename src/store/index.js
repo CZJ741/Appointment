@@ -3,8 +3,8 @@ import { getLoginStatus, logoutAdmin, validateAdminLogin } from '../utils/auth.j
 import axios from 'axios'
 
 // 配置axios基础URL
-axios.defaults.baseURL = 'http://apb.vgit.cn/api'
-
+axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
+// http://127.0.0.1:8000
 // 请求拦截器，添加token
 axios.interceptors.request.use(config => {
   // 确保headers对象存在
@@ -12,16 +12,27 @@ axios.interceptors.request.use(config => {
     config.headers = {}
   }
   
-  // 管理员接口（包括批准、拒绝、详情、所有预约列表等）不需要token验证
-  // 只对普通用户接口添加token
+  // 判断是否为管理员接口
   const isAdminApi = config.url && (
     config.url.includes('/appointment/all/') ||
+    config.url.includes('/appointment/batch-review/') ||
     (config.url.includes('/appointment/') && 
-    (config.url.includes('/approve/') || config.url.includes('/reject/') || config.url.includes('/detail/')))
+    (config.url.includes('/approve/') || config.url.includes('/reject/') || config.url.includes('/detail/') || config.url.includes('/complete/'))) ||
+    // 公告相关接口
+    config.url.includes('/announcement/create/') ||
+    config.url.includes('/announcement/') && config.url.includes('/update/') ||
+    config.url.includes('/announcement/') && config.url.includes('/delete/')
   )
   
-  // 只有非管理员接口才需要添加用户token
-  if (!isAdminApi) {
+  // 根据接口类型添加相应的token
+  if (isAdminApi) {
+    // 管理员接口添加管理员token
+    const adminToken = localStorage.getItem('admin_token')
+    if (adminToken) {
+      config.headers.Authorization = `Token ${adminToken}`
+    }
+  } else {
+    // 普通用户接口添加用户token
     const userToken = localStorage.getItem('user_token')
     if (userToken) {
       config.headers.Authorization = `Token ${userToken}`
@@ -45,6 +56,8 @@ export default createStore({
     currentAppointment: null,
     isAdminLoggedIn: !!localStorage.getItem('admin_token'),
     adminInfo: null,
+    // 公告数据
+    announcements: [],
     // 用户登录状态
     user: {
       isLoggedIn: !!localStorage.getItem('user_token'),
@@ -93,8 +106,11 @@ export default createStore({
     // 获取用户的所有预约
     userAppointments: (state) => {
       if (state.user && state.user.isLoggedIn) {
-        // 对于普通用户，后端返回的数据已经是过滤后的，直接返回所有数据
-        return state.appointments
+        // 即使后端返回了所有数据，也要在前端额外过滤，确保只显示当前用户的预约
+        return state.appointments.filter(appointment => {
+          // 检查appointment是否包含user_info字段，并且user_info.id与当前用户id匹配
+          return appointment.user_info && appointment.user_info.id === state.user.info.id
+        })
       }
       return []
     },
@@ -232,6 +248,30 @@ export default createStore({
       }
       localStorage.removeItem('user_token')
       localStorage.removeItem('user_info')
+    },
+    // 设置公告列表
+    SET_ANNOUNCEMENTS(state, announcements) {
+      // 将后端返回的snake_case字段转换为前端使用的camelCase
+      state.announcements = announcements.map(announcement => ({
+        ...announcement,
+        publishTime: announcement.publish_time,
+        issuingAuthority: announcement.issuing_authority
+      }))
+    },
+    // 添加新公告
+    ADD_ANNOUNCEMENT(state, announcement) {
+      state.announcements.push(announcement)
+    },
+    // 更新公告
+    UPDATE_ANNOUNCEMENT(state, announcement) {
+      const index = state.announcements.findIndex(a => a.id === announcement.id)
+      if (index !== -1) {
+        state.announcements[index] = announcement
+      }
+    },
+    // 删除公告
+    DELETE_ANNOUNCEMENT(state, id) {
+      state.announcements = state.announcements.filter(announcement => announcement.id !== id)
     }
   },
   actions: {
@@ -251,7 +291,7 @@ export default createStore({
             console.log('管理员数据获取成功');
           } catch (error) {
             console.error('获取所有预约数据失败:', error);
-            // 不抛出错误，继续执行
+            // 管理员获取数据失败时，直接返回空数组，不尝试获取个人预约数据
             appointmentData = [];
           }
         } else if (state.user.isLoggedIn) {
@@ -305,18 +345,19 @@ export default createStore({
             visitors: visitors,
             // 状态映射
             status: appointment.status || 'pending',
-            // 时间处理
-            visitDate: appointment.appointment_time,
-            visitTime: appointment.appointment_time ? new Date(appointment.appointment_time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '',
+            // 时间处理 - visitDate使用用户选择的探访日期
+            visitDate: appointment.visit_date,
+            visitTime: appointment.time_slot || '',
             createTime: appointment.created_at || new Date().toISOString(),
-            // 月份处理
-            month: appointment.appointment_time ? 
-              `${new Date(appointment.appointment_time).getFullYear()}-${String(new Date(appointment.appointment_time).getMonth() + 1).padStart(2, '0')}` : 
+            // 月份处理 - 使用visit_date的月份
+            month: appointment.visit_date ? 
+              `${new Date(appointment.visit_date).getFullYear()}-${String(new Date(appointment.visit_date).getMonth() + 1).padStart(2, '0')}` : 
               `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
             // 直接映射其他必要字段
             visitorAddress: appointment.visitor_address || '',
             prisonerName: appointment.prisoner_name || '',
             appointmentReason: appointment.appointment_reason || '',
+            approvalNotes: appointment.approval_notes || '',
             // 保留其他原始字段
             ...appointment
           };
@@ -377,68 +418,26 @@ export default createStore({
       }
     },
     // 审批预约
-    async approveAppointment({ commit }, { id, approvalInfo, visitDate, targetMonth: originalTargetMonth }) {
+    async approveAppointment({ commit }, { id, approvalInfo }) {
       try {
-        // 添加日志以调试日期传递问题
+        // 添加日志以调试
         console.log('approveAppointment参数:', {
           id,
-          visitDate,
           receptionTime: approvalInfo?.receptionTime
         })
         
-        // 确保visitDate是字符串格式且有效
-        let formattedVisitDate = visitDate
-        if (visitDate) {
-          // 如果visitDate是对象，转换为YYYY-MM-DD格式字符串
-          if (typeof visitDate === 'object' && visitDate !== null) {
-            formattedVisitDate = visitDate.toISOString().split('T')[0]
-            console.log('转换日期对象为字符串:', formattedVisitDate)
-          }
-        } else {
-          console.error('错误: 没有提供visitDate参数')
-          throw new Error('探访日期不能为空')
-        }
-        
-        // 构建完整的探访日期时间字符串
-        const fullDateTimeStr = formattedVisitDate && approvalInfo?.receptionTime 
-          ? `${formattedVisitDate} ${approvalInfo.receptionTime}` 
-          : formattedVisitDate // 如果没有时间，至少传递日期
-          
-        console.log('构建的fullDateTimeStr:', fullDateTimeStr)
-        
-        // 确保targetMonth始终基于实际指定的探访日期构建
-        let targetMonth = originalTargetMonth
-        if (formattedVisitDate) {
-          try {
-            // 解析visitDate格式 (YYYY-MM-DD)
-            const dateParts = formattedVisitDate.split('-')
-            if (dateParts.length === 3) {
-              const year = dateParts[0]
-              const month = dateParts[1].padStart(2, '0') // 确保月份是两位数字
-              targetMonth = `${year}-${month}`
-              console.log('构建的targetMonth:', targetMonth)
-            }
-          } catch (error) {
-            console.error('构建targetMonth失败:', error)
-          }
-        }
-        
-        // 调用后端API批准预约
+        // 调用后端API批准预约，不传递手动选择的日期和时间，由后端自动分配
          const response = await axios.put(`/appointment/${id}/approve/`, {
-          approvalInfo,
-          visit_date: fullDateTimeStr, // 确保总是传递日期信息，使用后端期望的参数名
-          targetMonth // 传递正确的月份信息
+          approvalInfo
         })
         
         console.log('API响应:', response.data)
         
-        // 创建包含探访时间的更新数据
+        // 创建更新数据，使用后端返回的日期和时间
         const updateData = {
           ...response.data,
-          visitTime: approvalInfo.receptionTime, // 确保探访时间被正确保存
-          // 构建完整的探访日期时间字符串
-          visitDate: visitDate,
-          appointment_time: fullDateTimeStr ? new Date(fullDateTimeStr).toISOString() : null
+          visitTime: response.data.time_slot || '',
+          visitDate: response.data.visit_date
         }
         
         commit('UPDATE_APPOINTMENT_STATUS', {
@@ -496,6 +495,49 @@ export default createStore({
         throw error.response?.data?.detail || error.message
       }
     },
+    // 批量审核预约
+    async batchReviewAppointments({ commit }, { appointments, timeSlot }) {
+      try {
+        // 构建请求数据
+        const requestData = {
+          appointments: appointments.map(appt => ({
+            id: appt.id,
+            status: appt.status,
+            time_slot: appt.status === 'approved' ? timeSlot : undefined,
+            approval_notes: appt.approval_notes
+          }))
+        }
+        
+        console.log('批量审核请求数据:', requestData)
+        
+        // 调用后端批量审核API
+        const response = await axios.post('/appointment/batch-review/', requestData)
+        
+        console.log('批量审核API响应:', response.data)
+        
+        // 更新本地状态
+        response.data.results.forEach(result => {
+          if (result.status === 'success') {
+            const appointmentData = appointments.find(a => a.id === result.id)
+            if (appointmentData) {
+              commit('UPDATE_APPOINTMENT_STATUS', {
+                id: result.id,
+                status: appointmentData.status,
+                data: {
+                  time_slot: appointmentData.status === 'approved' ? timeSlot : undefined,
+                  approval_notes: appointmentData.approval_notes
+                }
+              })
+            }
+          }
+        })
+        
+        return response.data
+      } catch (error) {
+        console.error('批量审核失败:', error)
+        throw error.response?.data?.error || error.message
+      }
+    },
     // 管理员登录
     async adminLogin({ commit }, credentials) {
       try {
@@ -503,14 +545,22 @@ export default createStore({
         const loginResult = await validateAdminLogin(credentials.username, credentials.password, '')
         
         if (loginResult.success) {
+          // 管理员登录时，清除客户端用户登录状态
+          localStorage.removeItem('user_token')
+          localStorage.removeItem('user_info')
+          
           // 保存登录状态和token
-          localStorage.setItem('admin_token', 'admin_mock_token')
+          localStorage.setItem('admin_token', loginResult.token)
           localStorage.setItem('admin_user', JSON.stringify(loginResult.user))
           
+          // 设置管理员登录状态
           commit('SET_ADMIN_LOGIN', {
             isLoggedIn: true,
             user: loginResult.user
           })
+          
+          // 清除客户端用户登录状态
+          commit('CLEAR_USER_LOGIN')
           
           return true
         } else {
@@ -589,6 +639,16 @@ export default createStore({
     // 用户登录（新的用户名密码系统）
     async userLogin({ commit }, credentials) {
       try {
+        // 客户端用户登录时，清除管理员登录状态
+        localStorage.removeItem('admin_token')
+        localStorage.removeItem('admin_user')
+        
+        // 设置管理员登录状态为未登录
+        commit('SET_ADMIN_LOGIN', {
+          isLoggedIn: false,
+          user: null
+        })
+        
         // 调用后端API进行用户登录
         const response = await axios.post('/login/', credentials)
         
@@ -599,6 +659,42 @@ export default createStore({
           full_name: full_name
         }
         commit('SET_USER_LOGIN', { user, token })
+        
+        // 登录成功后，检查预约审核状态
+        try {
+          const appointmentsResponse = await axios.get('/appointment/my/')
+          const appointments = appointmentsResponse.data || []
+          
+          // 查找最新的已批准或已拒绝的预约
+          const approvedAppointment = appointments
+            .filter(app => app.status === 'approved')
+            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]
+          
+          const rejectedAppointment = appointments
+            .filter(app => app.status === 'rejected')
+            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]
+          
+          // 如果有已批准的预约，显示提示
+          if (approvedAppointment) {
+            const visitDate = approvedAppointment.visit_date
+            const timeSlot = approvedAppointment.time_slot
+            setTimeout(() => {
+              alert(`您的预约已审核通过！\n探访日期：${visitDate}\n探访时间：${timeSlot}`)
+            }, 500)
+          }
+          
+          // 如果有已拒绝的预约，显示提示
+          if (rejectedAppointment) {
+            const rejectionReason = rejectedAppointment.rejection_reason || '未提供拒绝原因'
+            setTimeout(() => {
+              alert(`您的预约审核未通过！\n拒绝原因：${rejectionReason}`)
+            }, 500)
+          }
+        } catch (error) {
+          console.error('获取预约状态失败:', error)
+          // 不影响登录流程，继续执行
+        }
+        
         return { success: true }
       } catch (error) {
         console.error('用户登录失败:', error)

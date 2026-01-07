@@ -48,7 +48,7 @@
                   {{ appointment.month }} 探访预约
                 </h3>
                 <div class="text-sm text-gray-500 mt-1">
-                  <span>预约号: {{ appointment.id }}</span>
+                  <span>预约号: {{ appointment.appointment_number || appointment.id }}</span>
                   <span class="mx-2">|</span>
                   <span>提交时间: {{ formatDate(appointment.createTime) }}</span>
                 </div>
@@ -73,47 +73,42 @@
                 <div>
                   <div class="text-sm text-gray-500">探访日期</div>
                   <div class="font-medium">
-                    {{ appointment.status === 'approved' && appointment.visitDate ? formatDate(appointment.visitDate) : '待审核后确定' }}
+                    {{ appointment.visitDate ? formatDate(appointment.visitDate) : '' }}
                   </div>
                 </div>
                 <div>
                   <div class="text-sm text-gray-500">探访时间</div>
                   <div class="font-medium">
-                    {{ appointment.status === 'approved' && appointment.visitTime ? appointment.visitTime : '待审核后确定' }}
+                    {{ (appointment.status === 'approved' || appointment.status === 'completed') && appointment.visitTime ? appointment.visitTime : '' }}
                   </div>
                 </div>
-                <div>
-                  <div class="text-sm text-gray-500">排队号</div>
-                  <div class="font-medium">{{ appointment.queueNumber }}</div>
+                <div class="md:col-span-3">
+                  <div class="text-sm text-gray-500">预约原因</div>
+                  <div class="font-medium">{{ appointment.appointmentReason || '' }}</div>
                 </div>
+
                 <!-- 戒毒人员信息 -->
                 <div v-if="appointment.patientName" class="md:col-span-3">
                   <div class="text-sm text-gray-500">戒毒人员</div>
                   <div class="font-medium">{{ appointment.patientName }}</div>
                 </div>
-                <!-- 申请人信息 -->
+                <!-- 探访人信息 -->
                 <div v-if="appointment.visitors && appointment.visitors.length > 0" class="md:col-span-3">
-                  <div class="text-sm text-gray-500">申请人</div>
+                  <div class="text-sm text-gray-500">探访人</div>
                   <div class="font-medium bg-blue-50 px-3 py-1.5 rounded-md inline-block">
                     {{ appointment.visitors[0].name }}
                   </div>
                 </div>
-                <!-- 同行亲属信息 -->
+                <!-- 随行人员信息 -->
                 <div v-if="appointment.visitors && appointment.visitors.length > 1" class="md:col-span-3">
-                  <div class="text-sm text-gray-500">同行亲属 ({{ appointment.visitors.length - 1 }}人)</div>
+                  <div class="text-sm text-gray-500">随行人员 ({{ appointment.visitors.length - 1 }}人)</div>
                   <div class="flex flex-wrap gap-2 mt-1">
                     <div v-for="visitor in appointment.visitors.slice(1)" :key="visitor.id" class="bg-gray-100 px-3 py-1 rounded-full text-sm">
                       {{ visitor.name }}
                     </div>
                   </div>
                 </div>
-                <!-- 排队情况（仅对待审核状态显示） -->
-                <div v-if="appointment.status === 'pending'" class="md:col-span-3 mt-2">
-                  <div class="text-sm text-gray-500">当前排队情况</div>
-                  <div class="font-medium text-yellow-600">
-                    位置: {{ getQueuePosition(appointment.id) }}/{{ getTotalPending(appointment.month) }}
-                  </div>
-                </div>
+
                 <!-- 批次信息已移除 -->
               </div>
               
@@ -149,10 +144,10 @@
               </div>
               
               <!-- 拒绝原因 -->
-              <div v-if="appointment.status === 'rejected' && appointment.rejectionReason" class="mt-4 pt-4 border-t border-gray-200">
+              <div v-if="appointment.status === 'rejected' && appointment.approval_notes" class="mt-4 pt-4 border-t border-gray-200">
                 <h4 class="font-medium text-gray-700 mb-2">拒绝原因</h4>
                 <div class="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                  {{ appointment.rejectionReason }}
+                  {{ appointment.approval_notes }}
                 </div>
               </div>
               
@@ -225,37 +220,27 @@
                 <div>
                   <span class="text-gray-500">探访日期:</span> 
                   <span class="font-medium">
-                    {{ selectedAppointment.status === 'approved' && selectedAppointment.visitDate ? 
-                       formatDate(selectedAppointment.visitDate) : '待审核后确定' }}
+                    {{ selectedAppointment.visitDate ? formatDate(selectedAppointment.visitDate) : '' }}
                   </span>
                 </div>
                 <div>
                   <span class="text-gray-500">探访时间:</span> 
                   <span class="font-medium">
-                    {{ selectedAppointment.status === 'approved' && selectedAppointment.visitTime ? 
-                       selectedAppointment.visitTime : '待审核后确定' }}
+                    {{ selectedAppointment.visitTime ? selectedAppointment.visitTime : '' }}
                   </span>
                 </div>
-                <div>
-                  <span class="text-gray-500">排队号:</span> 
-                  <span class="font-medium">{{ selectedAppointment.queueNumber }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-500">批次:</span> 
-                  <span class="font-medium">第 {{ selectedAppointment.batchNumber }} 批次</span>
-                </div>
-                <!-- 排队情况 -->
-                <div v-if="selectedAppointment.status === 'pending'">
-                  <span class="text-gray-500">当前排队位置:</span> 
-                  <span class="font-medium text-yellow-600">{{ getQueuePosition(selectedAppointment.id) }}</span>
-                </div>
-                <div v-if="selectedAppointment.status === 'pending'">
-                  <span class="text-gray-500">队列总人数:</span> 
-                  <span class="font-medium">{{ getTotalPending(selectedAppointment.month) }}</span>
-                </div>
+
                 <div>
                   <span class="text-gray-500">提交时间:</span> 
                   <span class="font-medium">{{ formatDateTime(selectedAppointment.createTime) }}</span>
+                </div>
+                <div class="md:col-span-2">
+                  <span class="text-gray-500">预约原因:</span> 
+                  <span class="font-medium">{{ selectedAppointment.appointmentReason || '' }}</span>
+                </div>
+                <div v-if="selectedAppointment.approvalNotes" class="md:col-span-2">
+                  <span class="text-gray-500">审核备注:</span> 
+                  <span class="font-medium">{{ selectedAppointment.approvalNotes }}</span>
                 </div>
               </div>
             </div>
@@ -271,9 +256,9 @@
               </div>
             </div>
             
-            <!-- 申请人信息 -->
+            <!-- 探访人信息 -->
             <div class="mb-6">
-              <h3 class="text-lg font-medium text-gray-900 mb-3">申请人信息</h3>
+              <h3 class="text-lg font-medium text-gray-900 mb-3">探访人信息</h3>
               <div v-if="selectedAppointment.visitors && selectedAppointment.visitors.length > 0" class="p-3 border border-gray-200 rounded-lg">
                 <h4 class="font-medium mb-2">{{ selectedAppointment.visitors[0].name }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -283,11 +268,11 @@
                   </div>
                   <div>
                     <span class="text-gray-500">身份证号:</span> 
-                    <span class="font-medium">{{ maskIdCard(selectedAppointment.visitors[0].idCard) }}</span>
+                    <span class="font-medium">{{ selectedAppointment.visitors[0].idCard }}</span>
                   </div>
                   <div>
                     <span class="text-gray-500">联系电话:</span> 
-                    <span class="font-medium">{{ maskPhone(selectedAppointment.visitors[0].phone) }}</span>
+                    <span class="font-medium">{{ selectedAppointment.visitors[0].phone }}</span>
                   </div>
                   <div>
                     <span class="text-gray-500">与被探访人关系:</span> 
@@ -301,11 +286,11 @@
               </div>
             </div>
             
-            <!-- 其他亲属信息 -->
+            <!-- 随行人员信息 -->
             <div v-if="selectedAppointment.visitors && selectedAppointment.visitors.length > 1">
-              <h3 class="text-lg font-medium text-gray-900 mb-3">同行亲属信息</h3>
+              <h3 class="text-lg font-medium text-gray-900 mb-3">随行人员信息</h3>
               <div v-for="(visitor, index) in selectedAppointment.visitors.slice(1)" :key="visitor.id" class="mb-4 last:mb-0 p-3 border border-gray-200 rounded-lg">
-                <h4 class="font-medium mb-2">亲属 {{ index }}: {{ visitor.name }}</h4>
+                <h4 class="font-medium mb-2">随行人员 {{ index + 1 }}: {{ visitor.name }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                   <div>
                     <span class="text-gray-500">性别:</span> 
@@ -313,11 +298,11 @@
                   </div>
                   <div>
                     <span class="text-gray-500">身份证号:</span> 
-                    <span class="font-medium">{{ maskIdCard(visitor.idCard) }}</span>
+                    <span class="font-medium">{{ visitor.idCard }}</span>
                   </div>
                   <div>
                     <span class="text-gray-500">联系电话:</span> 
-                    <span class="font-medium">{{ maskPhone(visitor.phone) }}</span>
+                    <span class="font-medium">{{ visitor.phone }}</span>
                   </div>
                   <div class="md:col-span-2">
                     <span class="text-gray-500">与被探访人关系:</span> 
@@ -363,11 +348,11 @@
             </div>
             
             <!-- 拒绝原因 -->
-            <div v-if="selectedAppointment.status === 'rejected' && selectedAppointment.rejectionReason">
+            <div v-if="selectedAppointment.status === 'rejected' && selectedAppointment.approval_notes">
               <h3 class="text-lg font-medium text-gray-900 mb-3">拒绝原因</h3>
               <div class="bg-red-50 p-4 rounded-lg text-sm">
                 <div class="text-red-600">
-                  {{ selectedAppointment.rejectionReason }}
+                  {{ selectedAppointment.approval_notes }}
                 </div>
               </div>
             </div>
@@ -431,8 +416,9 @@ export default {
       if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase()
         result = result.filter(appointment => {
-          // 搜索预约号
-          if (appointment.id.toLowerCase().includes(query)) return true
+          // 搜索预约号（同时检查新的格式化预约号和原始id）
+          if ((appointment.appointment_number && appointment.appointment_number.toLowerCase().includes(query)) || 
+              appointment.id.toLowerCase().includes(query)) return true
           
           // 搜索亲属姓名
           return appointment.visitors.some(visitor => 
@@ -441,21 +427,11 @@ export default {
         })
       }
 
-      // 按创建时间倒序排列
-      return result.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+      // 按提交时间正序排列
+    return result.sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
     })
 
-    // 获取预约的排队位置
-    const getQueuePosition = (appointmentId) => {
-      return store.getters.appointmentQueuePosition(appointmentId)
-    }
-    
-    // 获取特定月份的待审核预约总数
-    const getTotalPending = (month) => {
-      return store.state.appointments.filter(appt => 
-        appt.month === month && appt.status === 'pending'
-      ).length
-    }
+
 
     // 格式化日期
     const formatDate = (dateString) => {
@@ -525,7 +501,6 @@ export default {
 
     // 监听点击模态框外部关闭
     onMounted(async () => {
-      // 从后端获取最新的预约数据
       await store.dispatch('initializeData')
       
       const handleClickOutside = (event) => {
@@ -556,9 +531,7 @@ export default {
       maskIdCard,
       maskPhone,
       viewDetail,
-      closeDetail,
-      getQueuePosition,
-      getTotalPending
+      closeDetail
     }
   }
 }

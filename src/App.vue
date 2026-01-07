@@ -67,13 +67,13 @@
               </router-link>
             </div>
             <!-- 管理员入口 -->
-            <router-link 
+            <!-- <router-link 
               v-if="!isAdminRoute" 
               to="/admin/login"
               class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-200"
             >
               管理员登录
-            </router-link>
+            </router-link> -->
           </div>
         </div>
       </div>
@@ -117,13 +117,13 @@
             >
               探访人登录
             </router-link>
-            <router-link
+            <!-- <router-link
               to="/admin/login"
               class="block px-3 py-2 rounded-md text-base font-medium text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-200"
               @click="mobileMenuOpen = false"
             >
               管理员登录
-            </router-link>
+            </router-link> -->
           </div>
         </div>
     </nav>
@@ -154,6 +154,16 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             预约管理
+          </router-link>
+          <router-link
+            to="/admin/schedule"
+            class="admin-nav-link"
+            active-class="admin-nav-link-active"
+          >
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            探访日程记录
           </router-link>
           <button 
             @click="logout"

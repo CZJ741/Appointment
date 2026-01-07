@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Appointment, RelativeInfo
+from .models import Appointment, RelativeInfo, VisitRecord, Announcement
 
 class RelativeInfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,12 +7,29 @@ class RelativeInfoSerializer(serializers.ModelSerializer):
         fields = ('name', 'gender', 'id_card', 'phone', 'relationship')
         # 不包含appointment字段，因为它会在保存时自动关联
 
+
+
+class VisitRecordSerializer(serializers.ModelSerializer):
+    """
+    探访记录序列化器，处理探访记录数据的序列化
+    """
+    class Meta:
+        model = VisitRecord
+        fields = ('id', 'visit_time', 'actual_visitor', 'notes')
+        read_only_fields = ('id',)
+
 class AppointmentSerializer(serializers.ModelSerializer):
     """
     预约序列化器，处理预约数据的序列化和反序列化
     """
     # 嵌套序列化器，用于处理亲属信息
     relatives = RelativeInfoSerializer(many=True, required=False)
+    
+    # 嵌套序列化器，用于处理探访记录信息
+    visit_records = VisitRecordSerializer(many=True, read_only=True)
+    
+    # 自定义visit_date字段，返回格式化的日期
+    visit_date = serializers.DateField(format='%Y-%m-%d', required=False)
     
     # 添加嵌套字段，显示关联的用户信息
     user_info = serializers.SerializerMethodField()
@@ -31,10 +48,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'visitor_name', 'visitor_gender', 'visitor_id_card', 
             'visitor_phone', 'visitor_address', 'prisoner_name', 
-            'relationship', 'appointment_reason', 'appointment_time', 
+            'relationship', 'appointment_reason', 
             'status', 'status_text', 'created_at', 'updated_at', 'relatives',
             'queue_month', 'queue_position', 'queue_month_text', 'user_info',
-            'visitor'  # 添加visitor字段
+            'visitor', 'time_slot', 'visit_date', 'visit_records', 'approval_notes'
         )
         read_only_fields = ('id', 'status', 'created_at', 'updated_at', 'user')
     
@@ -95,9 +112,31 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 class AppointmentListSerializer(serializers.ModelSerializer):
     # 用于列表展示的简化序列化器
+    status_text = serializers.SerializerMethodField()
+    
     class Meta:
         model = Appointment
         fields = (
-            'id', 'visitor_name', 'prisoner_name', 'appointment_time', 
-            'status', 'created_at'
+            'id', 'visitor_name', 'prisoner_name', 
+            'status', 'status_text', 'created_at', 'time_slot', 'visit_date', 'approval_notes'
         )
+    
+    def get_status_text(self, obj):
+        """
+        获取预约状态的中文描述
+        """
+        status_map = dict(Appointment.STATUS_CHOICES)
+        return status_map.get(obj.status, obj.status)
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    """
+    公告序列化器，处理公告数据的序列化和反序列化
+    """
+    # 格式化发布时间，创建时可选
+    publish_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False)
+    
+    class Meta:
+        model = Announcement
+        fields = ('id', 'title', 'publish_time', 'content', 'issuing_authority')
+        read_only_fields = ('id',)

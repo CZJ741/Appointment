@@ -26,27 +26,47 @@ const validateCaptcha = (input) => {
   return storedCaptcha && input.toUpperCase() === storedCaptcha.toUpperCase()
 }
 
-// 管理员登录函数 - 使用前端模拟数据进行验证
+// 管理员登录函数 - 调用后端API进行验证
 const validateAdminLogin = async (username, password, captcha) => {
   try {
-    // 使用前端模拟数据进行验证
-    if (username === MOCK_ADMIN_USER.username && password === MOCK_ADMIN_USER.password) {
-      // 生成模拟token
-      const mockToken = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      
+    // 调用后端用户登录接口
+    const response = await fetch('http://127.0.0.1:8000/api/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.is_staff) {
       // 保存登录状态
-      localStorage.setItem('admin_token', mockToken)
-      localStorage.setItem('admin_user', JSON.stringify(MOCK_ADMIN_USER))
+      localStorage.setItem('admin_token', data.token)
+      localStorage.setItem('admin_user', JSON.stringify({
+        username: data.username,
+        full_name: data.full_name,
+        is_staff: data.is_staff
+      }))
       
       return { 
         success: true, 
-        token: mockToken, 
-        user: MOCK_ADMIN_USER 
+        token: data.token, 
+        user: {
+          username: data.username,
+          full_name: data.full_name,
+          is_staff: data.is_staff
+        } 
+      }
+    } else if (response.ok && !data.is_staff) {
+      return { 
+        success: false, 
+        message: '该用户不是管理员' 
       }
     } else {
       return { 
         success: false, 
-        message: '用户名或密码错误' 
+        message: data.error || '用户名或密码错误' 
       }
     }
   } catch (error) {

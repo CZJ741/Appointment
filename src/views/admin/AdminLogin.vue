@@ -296,7 +296,7 @@ export default {
             password: form.value.password
           })
           
-          notification.success('登录成功', '欢迎回来，' + result.user.name)
+          notification.success('登录成功', '欢迎回来' )
           // 登录成功，跳转到管理面板
           router.push('/admin/dashboard')
         } else {

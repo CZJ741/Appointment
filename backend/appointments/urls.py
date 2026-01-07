@@ -7,7 +7,13 @@ from .views import (
     approve_appointment,
     reject_appointment,
     complete_appointment,
-    get_appointment_queue
+    get_appointment_queue,
+    batch_review_appointments,
+    get_visit_date_stats,
+    get_announcements,
+    create_announcement,
+    update_announcement,
+    delete_announcement
 )
 
 urlpatterns = [
@@ -23,4 +29,14 @@ urlpatterns = [
     path('appointment/<int:appointment_id>/approve/', approve_appointment, name='approve_appointment'),
     path('appointment/<int:appointment_id>/reject/', reject_appointment, name='reject_appointment'),
     path('appointment/<int:appointment_id>/complete/', complete_appointment, name='complete_appointment'),
+    path('appointment/batch-review/', batch_review_appointments, name='batch_review_appointments'),
+    
+    # 探访日统计接口
+    path('appointment/visit-date-stats/', get_visit_date_stats, name='get_visit_date_stats'),
+    
+    # 公告相关接口
+    path('announcements/', get_announcements, name='get_announcements'),
+    path('announcement/create/', create_announcement, name='create_announcement'),
+    path('announcement/<int:pk>/update/', update_announcement, name='update_announcement'),
+    path('announcement/<int:pk>/delete/', delete_announcement, name='delete_announcement'),
 ]

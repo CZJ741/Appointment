@@ -65,7 +65,7 @@
         <h3>预约成功！</h3>
         <p>您的预约已成功提交，以下是您的预约信息：</p>
         <ul>
-          <li>预约ID：{{ appointmentResult.appointment_id }}</li>
+          <li>预约号：{{ appointmentResult.appointment_id }}</li>
           <li>分配月份：{{ appointmentResult.assigned_month_text }}</li>
           <li>预计探访日期：{{ appointmentResult.estimated_visit_date }}</li>
           <li>当前状态：{{ appointmentResult.status === 'pending' ? '待审核' : '排队中' }}</li>
@@ -212,7 +212,7 @@ button:disabled {
           @click="selectAppointment(appointment.appointment_id)"
         >
           <div class="queue-header">
-            <span class="appointment-id">预约ID: {{ appointment.appointment_id }}</span>
+            <span class="appointment-id">预约号: {{ appointment.appointment_id }}</span>
             <span class="status" :class="appointment.current_status">
               {{ appointment.status_text }}
             </span>
@@ -231,7 +231,7 @@ button:disabled {
       <h3>预约详情</h3>
       <div class="detail-card">
         <div class="detail-item">
-          <label>预约ID:</label>
+          <label>预约号:</label>
           <span>{{ selectedQueue.appointment_id }}</span>
         </div>
         <div class="detail-item">

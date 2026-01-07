@@ -41,7 +41,8 @@ def user_login(request):
                     'token': token.key,
                     'user_id': user.id,
                     'username': user.username,
-                    'full_name': user.full_name
+                    'full_name': user.full_name,
+                    'is_staff': user.is_staff
                 }, status=status.HTTP_200_OK)
             return Response({'error': '用户名或密码错误'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

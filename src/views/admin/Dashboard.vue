@@ -130,6 +130,19 @@
           <h3 class="text-base font-medium text-gray-900">导出报告</h3>
           <p class="mt-1 text-sm text-gray-500">生成和下载系统报告</p>
         </div>
+        
+        <router-link 
+          to="/admin/announcements" 
+          class="block p-4 border border-gray-200 rounded-lg hover:bg-primary/5 hover:border-primary transition-colors duration-200 text-center"
+        >
+          <div class="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-3">
+            <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <h3 class="text-base font-medium text-gray-900">发布公告</h3>
+          <p class="mt-1 text-sm text-gray-500">管理和发布系统公告</p>
+        </router-link>
       </div>
     </div>
 
@@ -162,6 +175,12 @@
                 探访日期
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                预约人数
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                预约备注
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 状态
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -175,13 +194,19 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="appointment in recentAppointments" :key="appointment.id" class="hover:bg-gray-50 transition-colors duration-200">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {{ appointment.id }}
+                {{ appointment.appointment_number || appointment.id }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                {{ appointment.visitors.map(v => v.name).filter(Boolean).join('、') || '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ appointment.visitors[0]?.name }}
+                {{ appointment.visitDate ? formatDate(appointment.visitDate) : '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ appointment.status === 'pending' ? '待审核后确定' : (appointment.visitDate ? formatDate(appointment.visitDate) : '未设置') }}
+                {{ appointment.visitors.length }}人
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                <div class="whitespace-pre-wrap break-words">{{ appointment.appointmentReason || '-' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span 
@@ -201,6 +226,14 @@
                 >
                   查看详情
                 </router-link>
+                
+                <button 
+                  v-if="appointment.status === 'approved'"
+                  @click="handleComplete(appointment)"
+                  class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                >
+                  标记完成
+                </button>
               </td>
             </tr>
           </tbody>
@@ -284,6 +317,7 @@ export default {
     const formatDateTime = (dateString) => {
       const date = new Date(dateString)
       return date.toLocaleString('zh-CN', {
+        year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
@@ -314,7 +348,21 @@ export default {
     }
 
     // 快速批准
-
+    const handleComplete = async (appointment) => {
+      const notes = prompt('请输入探访记录（可选）：')
+      if (notes === null) return
+      
+      try {
+        await store.dispatch('completeAppointment', {
+          id: appointment.id,
+          completionNotes: notes
+        })
+        alert('预约已标记为完成！')
+      } catch (error) {
+        alert('操作失败，请稍后重试')
+        console.error('Complete error:', error)
+      }
+    }
 
     // 初始化图表
     const initChart = () => {
@@ -435,7 +483,8 @@ export default {
       formatDate,
       formatDateTime,
       getStatusText,
-      getStatusClass
+      getStatusClass,
+      handleComplete
     }
   }
 }

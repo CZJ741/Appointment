@@ -127,11 +127,11 @@ export default {
           // 跳转到首页
           router.push('/')
         } else {
-          notification.error('登录失败', '请检查用户名和密码')
+          notification.error('用户名或密码错误', '请检查用户名和密码')
         }
       } catch (error) {
         console.error('登录错误:', error)
-        notification.error('登录失败', error.message || '请稍后重试')
+        notification.error('用户名或密码错误', error.message || '请稍后重试')
       } finally {
         isLoading.value = false
       }
