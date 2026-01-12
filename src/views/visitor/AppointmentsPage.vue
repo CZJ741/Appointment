@@ -66,6 +66,14 @@
                 >
                   查看详情
                 </button>
+                <!-- 取消预约按钮 - 仅待审核或排队中状态显示 -->
+                <button 
+                  v-if="appointment.status === 'pending' || appointment.status === 'queued'"
+                  @click="confirmCancel(appointment)"
+                  class="ml-4 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200 text-sm"
+                >
+                  取消预约
+                </button>
               </div>
             </div>
             <div class="px-6 py-4">
@@ -181,6 +189,45 @@
       </div>
     </div>
 
+    <!-- 取消预约确认弹窗 -->
+    <div v-if="cancelConfirmVisible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div class="bg-red-500 p-6 rounded-t-xl">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-white">确认取消预约</h2>
+            <button 
+              @click="cancelConfirmVisible = false"
+              class="text-white hover:text-gray-200 transition-colors"
+            >
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-700 mb-6">
+            确定要取消预约吗？此操作不可恢复。
+          </p>
+          <div class="flex justify-end gap-4">
+            <button 
+              @click="cancelConfirmVisible = false"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors duration-200"
+            >
+              取消
+            </button>
+            <button 
+              @click="cancelAppointment"
+              class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+              :disabled="canceling"
+            >
+              {{ canceling ? '取消中...' : '确认取消' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- 预约详情模态框 -->
     <div v-if="selectedAppointment" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -393,6 +440,9 @@ export default {
     const activeFilter = ref('all')
     const searchQuery = ref('')
     const selectedAppointment = ref(null)
+    const cancelConfirmVisible = ref(false)
+    const canceling = ref(false)
+    const appointmentToCancel = ref(null)
 
     const filters = [
       { label: '全部', value: 'all' },
@@ -461,7 +511,8 @@ export default {
         pending: '待审核',
         approved: '已批准',
         rejected: '已拒绝',
-        completed: '已完成'
+        completed: '已完成',
+        canceled: '已取消'
       }
       return statusMap[status] || status
     }
@@ -472,7 +523,8 @@ export default {
         pending: 'bg-yellow-100 text-yellow-800',
         approved: 'bg-green-100 text-green-800',
         rejected: 'bg-red-100 text-red-800',
-        completed: 'bg-blue-100 text-blue-800'
+        completed: 'bg-blue-100 text-blue-800',
+        canceled: 'bg-gray-100 text-gray-800'
       }
       return classMap[status] || 'bg-gray-100 text-gray-800'
     }
@@ -497,6 +549,36 @@ export default {
     // 关闭详情
     const closeDetail = () => {
       selectedAppointment.value = null
+    }
+    
+    // 确认取消预约
+    const confirmCancel = (appointment) => {
+      appointmentToCancel.value = appointment
+      cancelConfirmVisible.value = true
+    }
+    
+    // 取消预约
+    const cancelAppointment = async () => {
+      if (!appointmentToCancel.value) return
+      
+      canceling.value = true
+      try {
+        // 调用Vuex action取消预约
+        await store.dispatch('cancelAppointment', appointmentToCancel.value.id)
+        
+        // 关闭确认弹窗
+        cancelConfirmVisible.value = false
+        
+        // 显示成功提示
+        alert('预约已成功取消')
+      } catch (error) {
+        // 显示错误提示
+        alert(`取消预约失败: ${error}`)
+        console.error('取消预约失败:', error)
+      } finally {
+        canceling.value = false
+        appointmentToCancel.value = null
+      }
     }
 
     // 监听点击模态框外部关闭
@@ -524,6 +606,8 @@ export default {
       filters,
       filteredAppointments,
       selectedAppointment,
+      cancelConfirmVisible,
+      canceling,
       formatDate,
       formatDateTime,
       getStatusText,
@@ -531,7 +615,9 @@ export default {
       maskIdCard,
       maskPhone,
       viewDetail,
-      closeDetail
+      closeDetail,
+      confirmCancel,
+      cancelAppointment
     }
   }
 }

@@ -7,6 +7,7 @@ from .views import (
     approve_appointment,
     reject_appointment,
     complete_appointment,
+    cancel_appointment,
     get_appointment_queue,
     batch_review_appointments,
     get_visit_date_stats,
@@ -29,6 +30,7 @@ urlpatterns = [
     path('appointment/<int:appointment_id>/approve/', approve_appointment, name='approve_appointment'),
     path('appointment/<int:appointment_id>/reject/', reject_appointment, name='reject_appointment'),
     path('appointment/<int:appointment_id>/complete/', complete_appointment, name='complete_appointment'),
+    path('appointment/<int:appointment_id>/cancel/', cancel_appointment, name='cancel_appointment'),
     path('appointment/batch-review/', batch_review_appointments, name='batch_review_appointments'),
     
     # 探访日统计接口

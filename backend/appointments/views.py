@@ -758,3 +758,55 @@ def get_visit_date_stats(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def cancel_appointment(request, appointment_id):
+    """
+    用户取消预约接口
+    只允许取消待审核或排队中的预约
+    取消后直接从数据库中删除该记录
+    """
+    try:
+        user = request.user
+        
+        try:
+            appointment = Appointment.objects.get(id=appointment_id, user=user)
+        except Appointment.DoesNotExist:
+            return Response({'error': '预约不存在或无权访问'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 检查预约状态，只允许取消待审核或排队中的预约
+        if appointment.status not in ['pending', 'queued']:
+            return Response({'error': '只能取消待审核或排队中的预约'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 保存队列信息，用于后续处理排队队列
+        queue_month = appointment.queue_month
+        created_at = appointment.created_at
+        
+        # 直接删除预约记录
+        appointment.delete()
+        
+        # 处理排队队列：当一个预约被取消时，如果有排队中的预约，将其状态和排队位置更新
+        if queue_month:
+            # 查找同一月份的预约
+            month_appointments = Appointment.objects.filter(
+                queue_month=queue_month,
+                status__in=['pending', 'queued']
+            ).order_by('created_at')
+            
+            # 更新状态和排队位置
+            for i, appt in enumerate(month_appointments):
+                if i == 0:
+                    # 第一个预约设置为待审核
+                    appt.status = 'pending'
+                else:
+                    # 其他预约设置为排队中
+                    appt.status = 'queued'
+                appt.queue_position = i + 1
+                appt.save()
+        
+        return Response({'message': '预约已取消', 'appointment_id': appointment_id}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -2,17 +2,7 @@
   <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/90 to-primary-dark">
     <div class="max-w-md w-full space-y-8 bg-white rounded-xl shadow-2xl p-8">
       <!-- 返回首页按钮 -->
-      <div class="text-left">
-        <router-link 
-          to="/" 
-          class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
-        >
-          <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          返回首页
-        </router-link>
-      </div>
+
       
       <!-- Logo和标题 -->
       <div class="text-center">

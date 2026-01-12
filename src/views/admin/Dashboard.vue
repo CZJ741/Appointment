@@ -101,36 +101,6 @@
           <p class="mt-1 text-sm text-gray-500">查看和处理所有预约请求</p>
         </router-link>
         
-        <div class="block p-4 border border-gray-200 rounded-lg hover:bg-primary/5 hover:border-primary transition-colors duration-200 text-center">
-          <div class="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-3">
-            <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-          <h3 class="text-base font-medium text-gray-900">用户管理</h3>
-          <p class="mt-1 text-sm text-gray-500">管理系统用户和权限</p>
-        </div>
-        
-        <div class="block p-4 border border-gray-200 rounded-lg hover:bg-primary/5 hover:border-primary transition-colors duration-200 text-center">
-          <div class="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-3">
-            <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h3 class="text-base font-medium text-gray-900">系统设置</h3>
-          <p class="mt-1 text-sm text-gray-500">配置系统参数和规则</p>
-        </div>
-        
-        <div class="block p-4 border border-gray-200 rounded-lg hover:bg-primary/5 hover:border-primary transition-colors duration-200 text-center">
-          <div class="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-3">
-            <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 class="text-base font-medium text-gray-900">导出报告</h3>
-          <p class="mt-1 text-sm text-gray-500">生成和下载系统报告</p>
-        </div>
-        
         <router-link 
           to="/admin/announcements" 
           class="block p-4 border border-gray-200 rounded-lg hover:bg-primary/5 hover:border-primary transition-colors duration-200 text-center"
@@ -350,6 +320,7 @@ export default {
     // 快速批准
     const handleComplete = async (appointment) => {
       const notes = prompt('请输入探访记录（可选）：')
+
       if (notes === null) return
       
       try {
@@ -491,37 +462,5 @@ export default {
 </script>
 
 <style scoped>
-/* 自定义动画 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 卡片进入动画 */
-.bg-white.rounded-xl {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* 统计卡片悬停效果 */
-.bg-white.rounded-xl:hover {
-  transform: translateY(-2px);
-}
-
-/* 表格行悬停效果增强 */
-tbody tr:hover {
-  background-color: rgba(249, 250, 251, 0.8);
-}
-
-/* 响应式调整 */
-@media (max-width: 640px) {
-  .grid-cols-1\/md\:grid-cols-4 {
-    grid-template-columns: 1fr 1fr;
-  }
-}
+/* 可以添加组件特定样式 */
 </style>

@@ -1097,6 +1097,7 @@ export default {
     // 标记完成
     const handleComplete = async (appointment) => {
       const notes = prompt('请输入探访记录（可选）：')
+
       if (notes === null) return // 用户取消
       
       try {

@@ -89,7 +89,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
                   <div>
-                    <div class="font-medium text-gray-800">{{ batch.timeSlot }} - 批次 {{ batch.batchNumber }}</div>
+                    <div class="font-medium text-gray-800">{{ batch.timeSlot }}</div>
                     <div class="text-sm text-gray-500 mt-1">
                       {{ batch.appointments.length }} 个预约
                     </div>
@@ -203,6 +203,13 @@ export default {
     // 探访日筛选相关
     const selectedVisitDay = ref('')
     
+    // 2026年探访日列表
+    const validVisitDates = [
+      '2026-01-14', '2026-02-10', '2026-03-18', '2026-04-15',
+      '2026-05-13', '2026-06-17', '2026-07-15', '2026-08-12',
+      '2026-09-16', '2026-10-14', '2026-11-18', '2026-12-16'
+    ]
+    
     // 生成已存在探访日的选项
     const visitDayOptions = computed(() => {
       const uniqueDays = new Set()
@@ -242,6 +249,9 @@ export default {
           if (isNaN(visitDateObj.getTime())) return
           
           const visitDate = visitDateObj.toISOString().split('T')[0]
+          
+          // 只有当探访日期在2026年探访日列表中时，才处理该预约
+          if (!validVisitDates.includes(visitDate)) return
           
           if (!visitDayMap.has(visitDate)) {
             visitDayMap.set(visitDate, {

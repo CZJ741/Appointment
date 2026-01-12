@@ -3,7 +3,7 @@ import { getLoginStatus, logoutAdmin, validateAdminLogin } from '../utils/auth.j
 import axios from 'axios'
 
 // 配置axios基础URL
-axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
+axios.defaults.baseURL = 'http://apb.vgit.cn/api'
 // http://127.0.0.1:8000
 // 请求拦截器，添加token
 axios.interceptors.request.use(config => {
@@ -17,7 +17,9 @@ axios.interceptors.request.use(config => {
     config.url.includes('/appointment/all/') ||
     config.url.includes('/appointment/batch-review/') ||
     (config.url.includes('/appointment/') && 
-    (config.url.includes('/approve/') || config.url.includes('/reject/') || config.url.includes('/detail/') || config.url.includes('/complete/'))) ||
+    (config.url.includes('/approve/') || config.url.includes('/reject/') || 
+     (config.url.includes('/detail/') && !config.url.includes('/cancel/')) || 
+     config.url.includes('/complete/'))) ||
     // 公告相关接口
     config.url.includes('/announcement/create/') ||
     config.url.includes('/announcement/') && config.url.includes('/update/') ||
@@ -495,6 +497,21 @@ export default createStore({
         throw error.response?.data?.detail || error.message
       }
     },
+    // 取消预约
+    async cancelAppointment({ commit }, id) {
+      try {
+        // 调用后端API取消预约，使用与批准/拒绝相同的路径模式
+        const response = await axios.put(`/appointment/${id}/cancel/`)
+        
+        // 从本地状态中删除该预约记录
+        commit('DELETE_APPOINTMENT', id)
+        
+        return response.data
+      } catch (error) {
+        console.error('取消预约失败:', error)
+        throw error.response?.data?.detail || error.message
+      }
+    },
     // 批量审核预约
     async batchReviewAppointments({ commit }, { appointments, timeSlot }) {
       try {
@@ -685,7 +702,7 @@ export default createStore({
           
           // 如果有已拒绝的预约，显示提示
           if (rejectedAppointment) {
-            const rejectionReason = rejectedAppointment.rejection_reason || '未提供拒绝原因'
+            const rejectionReason = rejectedAppointment.rejection_reason || '请于“我的预约” 界面查看'
             setTimeout(() => {
               alert(`您的预约审核未通过！\n拒绝原因：${rejectionReason}`)
             }, 500)

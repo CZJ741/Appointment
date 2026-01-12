@@ -120,7 +120,18 @@ def generate_test_appointments():
         '黄冈市黄州区振兴路',
         '黄冈市黄州区繁荣路',
         '黄冈市黄州区富强路',
-        '黄冈市黄州区文明路'
+        '黄冈市黄州区文明路',
+        '黄冈市黄州区赤壁一路',
+        '黄冈市黄州区赤壁二路',
+        '黄冈市黄州区赤壁三路',
+        '黄冈市黄州区东门一路',
+        '黄冈市黄州区东门二路',
+        '黄冈市黄州区东门三路',
+        '黄冈市黄州区新港一路',
+        '黄冈市黄州区新港二路',
+        '黄冈市黄州区新港三路',
+        '黄冈市黄州区黄州大道',
+        '黄冈市黄州区中环路'
     ]
     
     reasons = ['常规探访', '了解情况', '心理疏导', '家庭团聚', '节日探访',
@@ -147,14 +158,8 @@ def generate_test_appointments():
         # 生成预约号
         appointment_id = f'{date_str}{order_number}'
         
-        # 随机生成探访日期：约30%的概率生成已过期的日期，70%的概率生成未来日期
-        if random.random() < 0.3:
-            # 生成过去的日期（已过期）
-            days_ago = random.randint(1, 365)
-            visit_date = date.today() - timedelta(days=days_ago)
-        else:
-            # 生成随机探访日期（用户选择的探访日）
-            visit_date = generate_random_visit_date()
+        # 生成探访日期：所有探访日期都来自2026年探访日列表
+        visit_date = generate_random_visit_date()
         
         # 生成随机抵达时间（8:00-17:00之间）
         arrival_hour = random.randint(8, 17)
@@ -174,17 +179,10 @@ def generate_test_appointments():
         appointment_reason = f'{base_reason}，{visit_date} {arrival_time} 抵达戒毒所，期望{visit_time} 探访'
         
         # 随机生成1-3个探访人（1个预约人 + 最多2个随行人员）
-        visitor_count = random.randint(1, 3)
+        visitor_count = random.randint(1, 2)
         
-        # 随机生成预约状态：约40%的概率为pending，40%的概率为approved，20%的概率为其他状态
-        status_prob = random.random()
-        if status_prob < 0.4:
-            status = 'pending'
-        elif status_prob < 0.8:
-            status = 'approved'
-        else:
-            # 其他状态（rejected, cancelled, queued）
-            status = random.choice(['rejected', 'cancelled', 'queued'])
+        # 所有预约状态默认是待审核
+        status = 'pending'
         
         # 创建预约（模拟用户提交预约信息）
         appointment = Appointment.objects.create(

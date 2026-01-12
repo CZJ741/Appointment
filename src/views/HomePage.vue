@@ -70,7 +70,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">探访时间</h3>
-            <p class="text-gray-600">每月第3个星期三为接访日，预约可选定探访日，具体探访时间段将由管理员统一分配</p>
+            <p class="text-gray-600">我所探访时间为每月第三周的周三（具体请查询我所公众号发布的时间安排信息），上午8:30至11:30，下午14:30至16:00。</p>
           </div>
 
           <div class="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 transition-transform duration-200">
@@ -89,8 +89,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 class="text-xl font-semibold mb-2">预约方式</h3>
-            <p class="text-gray-600">点击“立即预约” 填写预约表单，即可完成预约</p>
+            <h3 class="text-xl font-semibold mb-2">时长与频率</h3>
+            <p class="text-gray-600">每次探访时间原则上不超过20分钟。每月探访次数不超过1次。具体安排可能根据管理需要、场所实际情况或特殊时期要求进行调整，请予以理解配合。</p>
           </div>
 
           <div class="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 transition-transform duration-200">
@@ -100,7 +100,7 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">预约审核</h3>
-            <p class="text-gray-600">提交预约后，工作人员将进行审核，审核结果将在5个工作日内通知</p>
+            <p class="text-gray-600">提交预约后，工作人员将进行审核，审核结果将在5个工作日内通知，请及时登录系统查看</p>
           </div>
         </div>
       </div>
@@ -204,7 +204,7 @@
             </div>
             <h3 class="text-xl font-semibold mb-2">电话咨询</h3>
             <p class="text-gray-600">工作日 9:00-17:00</p>
-            <p class="text-gray-800 font-medium mt-2">xxx-xxxxxxxx</p>
+            <p class="text-gray-800 font-medium mt-2">0713-8880121</p>
           </div>
 
           <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
@@ -215,20 +215,11 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-2">现场咨询</h3>
-            <p class="text-gray-600">黄冈市黄州区体育路黄州理工中等专业学校西侧约110米</p>
+            <p class="text-gray-600">黄州大道北77 号</p>
             <p class="text-gray-800 font-medium mt-2">黄冈市强制隔离戒毒所</p>
           </div>
 
-          <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
-            <div class="text-primary mb-4">
-              <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z" />
-              </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">邮箱咨询</h3>
-            <p class="text-gray-600">工作日 24小时内回复</p>
-            <p class="text-gray-800 font-medium mt-2">xxx@xxxx.com</p>
-          </div>
+
         </div>
       </div>
     </section>
